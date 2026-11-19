@@ -40,6 +40,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Bedtime
@@ -66,6 +68,8 @@ import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.automirrored.filled.BatteryUnknown
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -327,6 +331,7 @@ fun TodayScreen(
     // The liquid header battery ring taps through to Devices (iOS parity: the battery ring → router.openDevices()).
     // Defaulted to fall back to Settings so the call site stays compiling; AppRoot binds it to the Devices route.
     onOpenDevices: () -> Unit = onOpenSettings,
+    onOpenActivity: () -> Unit = {},
     // The #627 journal-reminder card links straight to the journal (Insights). Defaulted to a no-op so
     // the call site stays compiling; AppRoot binds it to nav.navigateTopLevel(Insights), same as Sleep.
     onOpenJournal: () -> Unit = {},
@@ -1379,15 +1384,6 @@ fun TodayScreen(
         fullBleedBackground = screenBackdropFullBleed(showDayCycleBackground, skyBehindCards),
     ) {
         item {
-        // LIQUID Today header (iOS LiquidTodayView.scene parity), a full structural rebuild to mirror the
-        // iOS liquid Today element-for-element (NOT the old numeric-date + recording-light + bell header):
-        //   LEFT  — a tappable title block: the big rounded-bold day title ("Today" / "Yesterday" / the
-        //           weekday) over a human date line ("Friday, 3 July"). Tap opens the day picker.
-        //   RIGHT — exactly the iOS four controls, in order: a filled HEART (→ Support), the PROFILE
-        //           AVATAR (→ Settings), a "+" ADD button (→ quick actions), and the strap BATTERY RING.
-        // The recording-status light and the notifications BELL are GONE from the header (iOS has neither);
-        // the Updates inbox is relocated into the "+" quick-actions sheet (AppRoot), so the feature stays one
-        // tap away without sitting in the Today header. Staggered in as the first section (index 0).
         val dayTitle = when (selectedDayOffset) {
             0 -> uiString(R.string.today_day_today)
             1 -> uiString(R.string.today_day_yesterday)
@@ -1396,98 +1392,18 @@ fun TodayScreen(
                 keyDate.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))
             }
         }
-        // Human date line under the title — "Friday, 3 July" (weekday + day + month), NOT a numeric date.
-        // Dated by the row ACTUALLY on screen (selectedDayKey follows the resolver at offset 0), matching
-        // the iOS `dateLine` (EEEE, d MMMM). Mirrors iOS's date-under-title block.
-        val humanDate = run {
-            val keyDate = runCatching { LocalDate.parse(selectedDayKey) }.getOrNull() ?: selectedDay
-            keyDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault()))
-        }
-        // #486: header + wordmark + Arrange fold into ONE compact top cluster. Previously the decorative
-        // "N O O P" wordmark and the pinned "Arrange" affordance were each their own full-width list item,
-        // so the scaffold's 12dp rowSpacing left two near-empty sky bands stacked under the header ("empty
-        // space below NOOP"). Grouping them here removes those section gaps: the wordmark hangs 2dp under
-        // the title, and Arrange rides the SAME row as the wordmark (wordmark dead-centre, Arrange trailing)
-        // instead of claiming its own band.
-        Column(
-            modifier = Modifier.fillMaxWidth().staggeredAppear(0),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            LiquidTodayHeader(
+        val date = runCatching { LocalDate.parse(selectedDayKey) }.getOrNull() ?: selectedDay
+        val humanDate = date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
+        Column(verticalArrangement = Arrangement.spacedBy(Metrics.space4)) {
+            TodayHeader(
                 dayTitle = dayTitle,
                 humanDate = humanDate,
                 selectedDay = selectedDay,
-                battery = HeaderBatteryDisplay.resolve(
-                    activeIsWhoop = activeIsWhoop, connected = liveSnap.connected,
-                    strapPct = liveSnap.batteryPct, ringPct = ouraBatteryPct,
-                ),
-                backfilling = liveSnap.backfilling,
-                syncChunksThisSession = liveSnap.syncChunksThisSession,
-                lastSyncAt = liveSnap.lastSyncAt,
-                historySyncExperimental = liveSnap.historySyncExperimental,
-                pagesBehindAtConnect = liveSnap.pagesBehindAtConnect,
-                scanning = liveSnap.scanning,
-                // One rule for both affordances: they exist while the strap is away. Connected, the
-                // chip goes back to reporting sync and nothing else, rather than offering a connect to
-                // something already connected.
-                onRescan = if (liveSnap.connected) null else requestScan,
-                onPickDay = { offset -> selectedDayOffset = offset },
+                onPickDay = { selectedDayOffset = it },
                 onQuickActions = onQuickActions,
-                onOpenSettings = onOpenSettings,
-                onOpenDevices = onOpenDevices,
+                onOpenYou = onOpenSettings,
+                onCustomize = { showLayoutEditor = true },
             )
-            // WORDMARK (iOS LiquidWordmark parity): a subtle centred "N O O P" @ ~50% opacity, with a
-            // tap easter egg. Still shares its row with the customization control, as #486 intended,
-            // but in a slot of its own rather than underneath it.
-            //
-            // #2110: the wordmark and the control used to share this row as a BOX (#486), wordmark centred
-            // and the control aligned CenterEnd. A Box stacks its children, so nothing reserved space or
-            // shortened the wordmark — the two simply overlapped once the control grew wide enough to reach
-            // the centre. #2010 grew it (icon + label + padding + a frosted pill) and the trailing "P"
-            // disappeared underneath it, worse per locale since the label runs 3 chars in zh to 13 in fr
-            // against the 9 it was eyeballed at.
-            //
-            // A ROW with equal fixed gutters instead of a Box: the leading Spacer mirrors the trailing
-            // control exactly, so the wordmark stays optically centred while owning the space BETWEEN them.
-            // Overlap is now unexpressible at any label width, in any locale, because the two occupy
-            // different slots rather than the same one.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // #2169: the balancing spacer becomes the control, but ONLY while there is something to
-                // connect. A permanently visible control has to explain itself; one that appears exactly
-                // when the strap is away says what it is for by being there, and cannot be read as a
-                // reload button on a screen that never reloads. Connected, it goes back to being a
-                // spacer, so the wordmark is centred by the same control-sized gutter either way and
-                // nothing moves as the strap comes and goes.
-                //
-                // Scanning counts as needed: a scan running means not yet connected, and hiding the
-                // control mid-attempt would take away the only in-progress signal the header has.
-                // The SLOT is permanent and only the control inside it fades, rather than swapping the
-                // two. A 4.0 that is dropping and auto-reconnecting flips `connected` repeatedly, and an
-                // instant swap turns that into a blinking icon beside the wordmark; a fade reads as a
-                // pulse instead. Keeping the gutter itself always present also means the wordmark cannot
-                // shift even mid-transition, which an if/else between a control and a spacer allows.
-                val scanAffordance by animateFloatAsState(
-                    targetValue = if (liveSnap.connected) 0f else 1f,
-                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                )
-                Box(
-                    modifier = Modifier.size(HeaderClusterControl),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (scanAffordance > 0.01f) {
-                        Box(modifier = Modifier.graphicsLayer { alpha = scanAffordance }) {
-                            RescanDisc(scanning = liveSnap.scanning, onClick = requestScan)
-                        }
-                    }
-                }
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    LiquidWordmark()
-                }
-                CustomizeDisc(onClick = { showLayoutEditor = true })
-            }
             // The reply to a tap that went nowhere. Wording comes from the BLE layer, the same text
             // Live and Onboarding show, so this adds no copy of its own.
             scanHint?.let { hint ->
@@ -1521,13 +1437,26 @@ fun TodayScreen(
             }
         }
 
-        // Design Reset (iOS parity): the "New here?" first-run card is off the Today dashboard for the
-        // clean look, the scoring guide stays reachable from the i on each score and in Settings.
+        // The alert belongs to the newest banked night. A past-day view or a day
+        // rollover without a new row must not keep showing yesterday's warning.
+        if (selectedDayOffset == 0 && alert != null && today != null &&
+            days.lastOrNull()?.day == resolveTodayRow(days, todayDate.toString(), LocalDate.now().toString())?.day
+        ) item { IllnessBanner(alert!!) }
 
-        // When there is no daily score yet (today's recovery is null / no history),
-        // lead with the "live now, history one import away" note so the empty tiles
-        // below are explained rather than just dashed out. A small × dismisses it INTO
-        // the Updates inbox (restorable from there). Only anchored to today (offset 0).
+        // #486: the "Arrange" affordance moved UP into the header/wordmark cluster (see above) so it no
+        // longer sits alone in its own full-width band here. It stays pinned; only its position changed.
+
+        // #today-layout: EVERY Today section — including the Charge/Effort/Rest hero and the Start-session
+        // entry — renders in the user's saved order (TodayLayoutPrefs); only the top bar + this Arrange
+        // affordance stay pinned. Each section is ONE keyed item wrapped in [TodayReorderableSection]:
+        // LONG-PRESS anywhere on a section and drag — it lifts (haptic), follows the finger, swaps
+        // neighbours as it crosses their centres (the screen-level frame loop also auto-scrolls at the
+        // viewport edges and keeps swapping while it does), and the order persists on drop. The stagger
+        // index follows the section's live position.
+        val visibleSections = sectionOrder.filterNot { it in hiddenSections }
+        val primarySections = setOf(TodaySection.HERO, TodaySection.SYNTHESIS, TodaySection.RECOVERY_VITALS)
+        val lastPrimarySection = visibleSections.lastOrNull { it in primarySections }
+        fun androidx.compose.foundation.lazy.LazyListScope.scoreNotices() {
         if (displayMetric?.recovery == null) {
             item {
             // While the strap is mid-offload, say so, empty tiles read as final otherwise (#77).
@@ -1626,23 +1555,9 @@ fun TodayScreen(
             }
         }
 
-        // The alert belongs to the newest banked night. A past-day view or a day
-        // rollover without a new row must not keep showing yesterday's warning.
-        if (selectedDayOffset == 0 && alert != null && today != null &&
-            days.lastOrNull()?.day == resolveTodayRow(days, todayDate.toString(), LocalDate.now().toString())?.day
-        ) item { IllnessBanner(alert!!) }
-
-        // #486: the "Arrange" affordance moved UP into the header/wordmark cluster (see above) so it no
-        // longer sits alone in its own full-width band here. It stays pinned; only its position changed.
-
-        // #today-layout: EVERY Today section — including the Charge/Effort/Rest hero and the Start-session
-        // entry — renders in the user's saved order (TodayLayoutPrefs); only the top bar + this Arrange
-        // affordance stay pinned. Each section is ONE keyed item wrapped in [TodayReorderableSection]:
-        // LONG-PRESS anywhere on a section and drag — it lifts (haptic), follows the finger, swaps
-        // neighbours as it crosses their centres (the screen-level frame loop also auto-scrolls at the
-        // viewport edges and keeps swapping while it does), and the order persists on drop. The stagger
-        // index follows the section's live position.
-        sectionOrder.filterNot { it in hiddenSections }.forEach { section ->
+        }
+        if (lastPrimarySection == null) scoreNotices()
+        visibleSections.forEach { section ->
             // Entrance stagger keyed on the section's FIXED default position, not its live position: the
             // stagger only matters on first appearance (staggeredAppear latches), and a live-position
             // stagger changes every moved section's content lambda on every mid-drag swap — recomposing
@@ -1927,12 +1842,31 @@ fun TodayScreen(
                     }
                 }
             }
+            if (section == lastPrimarySection) {
+                if (selectedDayOffset == 0) {
+                    item(key = "today_device") {
+                        TodayDeviceCard(
+                            vm = viewModel,
+                            battery = HeaderBatteryDisplay.resolve(
+                                activeIsWhoop = activeIsWhoop, connected = liveSnap.connected,
+                                strapPct = liveSnap.batteryPct, ringPct = ouraBatteryPct,
+                            ),
+                            live = liveSnap,
+                            onOpenActivity = onOpenActivity,
+                            onOpenDevices = onOpenDevices,
+                            onRescan = if (!liveSnap.connected && activeIsWhoop) requestScan else null,
+                        )
+                    }
+                }
+                scoreNotices()
+            }
         }
         // Auto-detect workouts (MVP, opt-in, default OFF), a NON-DESTRUCTIVE "looks like a workout?"
         // card that suggests logging a detected sustained-elevated-HR bout. Renders nothing when the
         // toggle is off or there's nothing to suggest. Save → a manual "Workout" row; × → dismissed forever.
         if (selectedDayOffset == 0) {
             item { AutoWorkoutNudgeCard(viewModel = viewModel, days = days) }
+
         }
         // Strap battery only while the link is up AND a real reading exists, a stale % from a
         // dropped connection must not present as live (#159).
@@ -2344,38 +2278,6 @@ private fun TodayCardDismissButton(onClick: () -> Unit, modifier: Modifier = Mod
  * Greys out and stops taking taps while a scan is running, which is the same rule the Settings and Live
  * buttons follow. No spinner: the sync chip two controls away is already the thing that reports state.
  */
-@Composable
-private fun RescanDisc(scanning: Boolean, onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier = Modifier
-            .size(HeaderClusterControl)
-            .liquidPress(interaction)
-            .clip(CircleShape)
-            // The same translucent-white disc its siblings use: part of the header, not a call to action.
-            .background(Color.White.copy(alpha = if (scanning) 0.08f else 0.16f))
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                enabled = !scanning,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = uiString(R.string.l10n_today_screen_scan_and_connect_40157030) },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            // Bluetooth, not Refresh. Settings can use a circular arrow because the word "Re-scan" is
-            // sitting next to it; here the glyph is the whole affordance, and a circular arrow on a
-            // screen full of numbers reads as "reload my data" rather than "look for my strap". This is
-            // also the icon Live's Scan & Connect button and the onboarding connect steps already use,
-            // so the same action now looks the same everywhere it appears.
-            if (scanning) Icons.Filled.BluetoothSearching else Icons.Filled.Bluetooth,
-            contentDescription = null,
-            tint = Color.White.copy(alpha = if (scanning) 0.45f else 1f),
-            modifier = Modifier.size(16.dp),
-        )
-    }
-}
 
 /** Customize Today (#2110): section order and visibility, on the trailing edge of the wordmark row.
  *
@@ -2392,63 +2294,7 @@ private fun RescanDisc(scanning: Boolean, onClick: () -> Unit) {
  *
  *  No new string: the existing "Customize Today" title is the accessibility label, so this ships in
  *  every locale that already had it. */
-@Composable
-private fun CustomizeDisc(onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier = Modifier
-            // Level with the avatar / + / battery ring (shared size), so the cluster reads as one row.
-            .size(HeaderClusterControl)
-            .liquidPress(interaction)
-            .clip(CircleShape)
-            // The same translucent-white disc the + uses, rather than the frosted card surface #2010
-            // reached for: the point is to look like its siblings, not like a call to action.
-            .background(Color.White.copy(alpha = 0.16f))
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = uiString(R.string.today_customize_title) },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            Icons.Filled.Tune,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(16.dp),
-        )
-    }
-}
 
-@Composable
-private fun QuickActionDisc(onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier = Modifier
-            // Sit level with the avatar / battery ring in the liquid header cluster (shared size).
-            .size(HeaderClusterControl)
-            .liquidPress(interaction)
-            .clip(CircleShape)
-            // A translucent-white disc so the + reads on the day-of-sky like the rest of the liquid cluster,
-            // with a crisp white glyph. Mirrors iOS LiquidAddButton (a "plus" on Circle().fill(.white@0.16)).
-            .background(Color.White.copy(alpha = 0.16f))
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = uiString(R.string.l10n_today_screen_quick_actions_e47e8042) },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            Icons.Filled.Add,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(16.dp),
-        )
-    }
-}
 
 // MARK: - Scoring-guide affordances (ⓘ + first-run card)
 
@@ -2541,28 +2387,14 @@ private fun ScoringGuideIntroCard(onOpen: () -> Unit, onDismiss: () -> Unit) {
 private val HeaderClusterControl = 36.dp
 
 @Composable
-private fun LiquidTodayHeader(
+private fun TodayHeader(
     dayTitle: String,
     humanDate: String,
     selectedDay: LocalDate,
-    /** What the battery ring shows for the ACTIVE device, resolved by [HeaderBatteryDisplay]: the strap's
-     *  charge (or its offline / no-reading-yet glyph) under an active strap, the ring's own charge under an
-     *  active ring, and nothing at all when the active device is neither. (#2208) */
-    battery: HeaderBatteryDisplay.State,
-    // #245: sync state for the compact header chip (twin of iOS SyncStatusChip).
-    backfilling: Boolean = false,
-    syncChunksThisSession: Int = 0,
-    lastSyncAt: Long? = null,
-    historySyncExperimental: Boolean = false,
-    // #689/#815: the connect-time backlog sample, when known.
-    pagesBehindAtConnect: Int? = null,
-    // #2169: whether a scan is already running, and how to ask for one.
-    scanning: Boolean = false,
-    onRescan: (() -> Unit)? = null,
     onPickDay: (Int) -> Unit,
     onQuickActions: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onOpenDevices: () -> Unit,
+    onOpenYou: () -> Unit,
+    onCustomize: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showPicker by remember { mutableStateOf(false) }
@@ -2624,44 +2456,71 @@ private fun LiquidTodayHeader(
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
 
-        // RIGHT: the controls, in order — [sync chip] · avatar · + · battery ring. Each ~36dp, 8dp apart.
-        //
-        // #2110: deliberately NOT where the Customize control went, even though that is where iOS keeps it.
-        // The title Column beside this is weight(1f) with maxLines=1 + Ellipsis, so every control added here
-        // is width taken from the day title, and Android starts from a wider cluster than iOS because of the
-        // sync chip iOS has no equivalent of. iOS can afford its fourth control because it fades the title
-        // under a MEASURED cluster width (headerTrailingControlFadeMask); Android has no such reserve. On a
-        // 393dp phone a fifth control leaves the 28sp title ~117dp, and "Yesterday" needs ~139dp, so it
-        // would have started ellipsizing a day title that fits today.
+        var menuOpen by remember { mutableStateOf(false) }
+        Box {
+            IconButton(onClick = { menuOpen = true }) {
+                Icon(Icons.Filled.MoreVert, contentDescription = uiString(R.string.nav_more),
+                    tint = Palette.textSecondary)
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text(uiString(R.string.today_customize_action)) },
+                    onClick = { menuOpen = false; onCustomize() },
+                )
+                DropdownMenuItem(
+                    text = { Text(uiString(R.string.redesign_quick_actions)) },
+                    onClick = { menuOpen = false; onQuickActions() },
+                )
+            }
+        }
+        YouAvatar(onClick = onOpenYou)
+    }
+}
+
+@Composable
+private fun TodayDeviceCard(
+    vm: AppViewModel,
+    battery: HeaderBatteryDisplay.State,
+    live: TodayLiveSnapshot,
+    onOpenActivity: () -> Unit,
+    onOpenDevices: () -> Unit,
+    onRescan: (() -> Unit)?,
+) {
+    val bpm by vm.bpm.collectAsStateWithLifecycle()
+    val deviceName by vm.activeDeviceName.collectAsStateWithLifecycle()
+    NoopCard(padding = Metrics.space12) {
         Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Metrics.space8),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // #245: compact sync-status chip, shown for EVERY user — syncing / last-synced / experimental,
-            // so the absence of active syncing reads as caught-up (the full SyncingHistoryNote is gated on
-            // recovery == null). Twin of iOS SyncStatusChip.
-            SyncStatusChip(
-                backfilling = backfilling, chunks = syncChunksThisSession,
-                lastSyncAt = lastSyncAt, historySyncExperimental = historySyncExperimental,
-                pagesBehind = pagesBehindAtConnect,
-                scanning = scanning, onRescan = onRescan,
-            )
-            YouAvatar(onClick = onOpenSettings)
-            // (b) Quick-add (+), the accented primary. Mirrors iOS's LiquidAddButton (a glyph on a translucent
-            // disc → the quick-actions menu). Sized to match the rest of the liquid cluster (shared HeaderClusterControl).
-            QuickActionDisc(onClick = onQuickActions)
-            // (c) Active-device battery ring showing the % (iOS LiquidBatteryButton). Tap → Devices.
-            // Not drawn when the active device is neither the strap nor a ring with a charge of its own to
-            // show: an empty "Strap battery" ring under a streaming ring is a control asserting something
-            // about a strap nobody is wearing. A ring that HAS reported its charge is the active device's
-            // own reading, and #2208's fix left it undrawn only because the control could not yet tell
-            // whose number it held.
-            when (battery) {
-                HeaderBatteryDisplay.State.NotActiveDevice -> Unit
-                HeaderBatteryDisplay.State.Offline, HeaderBatteryDisplay.State.Pending ->
-                    LiquidBatteryRing(batteryPct = null, isRing = false, onClick = onOpenDevices)
-                is HeaderBatteryDisplay.State.Charge ->
-                    LiquidBatteryRing(batteryPct = battery.pct, isRing = battery.isRing, onClick = onOpenDevices)
+            Row(
+                modifier = Modifier.weight(1f).clickable(onClick = onOpenActivity),
+                horizontalArrangement = Arrangement.spacedBy(Metrics.space8),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Favorite, contentDescription = null, tint = Palette.metricRose,
+                    modifier = Modifier.size(Metrics.iconSmall))
+                Column {
+                    Text(uiString(R.string.redesign_live_heart_rate), style = NoopType.caption, color = Palette.textSecondary)
+                    Text(bpm?.let { uiString(R.string.redesign_live_bpm, it) } ?: "—",
+                        style = NoopType.headline, color = Palette.textPrimary)
+                }
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    deviceName ?: uiString(R.string.nav_devices),
+                    modifier = Modifier.clickable(onClick = onOpenDevices),
+                    style = NoopType.caption, color = Palette.textSecondary,
+                )
+                SyncStatusChip(
+                    backfilling = live.backfilling, chunks = live.syncChunksThisSession,
+                    lastSyncAt = live.lastSyncAt, historySyncExperimental = live.historySyncExperimental,
+                    pagesBehind = live.pagesBehindAtConnect, scanning = live.scanning, onRescan = onRescan,
+                )
+            }
+            if (battery is HeaderBatteryDisplay.State.Charge) {
+                LiquidBatteryRing(batteryPct = battery.pct, isRing = battery.isRing, onClick = onOpenDevices)
             }
         }
     }
@@ -2875,65 +2734,6 @@ private fun LiquidBatteryRing(batteryPct: Double?, isRing: Boolean, onClick: () 
 // off-centre), so it sits DEAD centre, white @ ~50% opacity. A tap plays one of several random one-shot
 // animations — wiggle / shake / flip / spin / bounce / jelly squash. Mirrors iOS LiquidWordmark.
 
-@Composable
-private fun LiquidWordmark() {
-    val reduced = rememberReduceMotion()
-    var rot by remember { mutableStateOf(0f) }        // z-rotation (wiggle / spin)
-    var scaleX by remember { mutableStateOf(1f) }     // horizontal scale (jelly squash)
-    var scaleY by remember { mutableStateOf(1f) }     // vertical scale (bounce / jelly)
-    var dx by remember { mutableStateOf(0f) }         // horizontal offset (shake)
-    var egg by remember { mutableIntStateOf(0) }      // which egg to play (drives the LaunchedEffect)
-
-    val view = LocalView.current
-    val animRot by animateFloatAsState(rot, tween(durationMillis = if (reduced) 0 else 520), label = uiString(R.string.l10n_today_screen_wordmark_rot_21de874b))
-    val animScaleX by animateFloatAsState(scaleX, tween(durationMillis = if (reduced) 0 else 380), label = uiString(R.string.l10n_today_screen_wordmark_sx_68fa7b60))
-    val animScaleY by animateFloatAsState(scaleY, tween(durationMillis = if (reduced) 0 else 380), label = uiString(R.string.l10n_today_screen_wordmark_sy_7b8bd743))
-    val animDx by animateFloatAsState(dx, tween(durationMillis = if (reduced) 0 else 420), label = uiString(R.string.l10n_today_screen_wordmark_dx_d428284f))
-
-    // On each tap, kick a value to an extreme then settle it back so the animateFloatAsState eases through
-    // to rest — a natural wobble without hand-authored keyframes. Six variants, chosen at random per tap.
-    LaunchedEffect(egg) {
-        if (egg == 0) return@LaunchedEffect
-        when ((0..5).random()) {
-            0 -> { rot = -12f; kotlinx.coroutines.delay(90); rot = 0f }            // wiggle
-            1 -> { dx = -12f; kotlinx.coroutines.delay(90); dx = 0f }              // shake
-            2 -> { rot += 360f }                                                    // spin
-            3 -> { scaleX = 1.28f; scaleY = 1.28f; kotlinx.coroutines.delay(90); scaleX = 1f; scaleY = 1f } // bounce
-            4 -> { scaleX = 1.35f; scaleY = 0.7f; kotlinx.coroutines.delay(90); scaleX = 1f; scaleY = 1f }  // jelly
-            else -> { rot += 360f }                                                 // flip (spin twin)
-        }
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) {
-                egg += 1
-                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            }
-            .graphicsLayer {
-                rotationZ = animRot
-                this.scaleX = animScaleX
-                this.scaleY = animScaleY
-                translationX = animDx
-            }
-            .clearAndSetSemantics {}, // decorative wordmark — invisible to TalkBack
-        horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        "NOOP".forEach { ch ->
-            Text(
-                ch.toString(),
-                style = NoopType.number(16f, weight = FontWeight.Bold)
-                    .copy(shadow = Shadow(color = Color.Black.copy(alpha = 0.25f), offset = Offset(0f, 1f), blurRadius = 6f)),
-                color = Color.White.copy(alpha = 0.5f),
-            )
-        }
-    }
-}
 
 /// Vital-detail keys the hero rings open (#1995).
 ///
@@ -3072,6 +2872,7 @@ internal fun CompactMetricBar(fraction: Double?, tint: Color) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SynthesisHeroCard(
     day: DailyMetric?,
@@ -3091,49 +2892,6 @@ private fun SynthesisHeroCard(
     // as today's. today's own read wins the instant tonight is scored.
     val readDay = carriedDay ?: day
     val recovery = readDay?.recovery
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        // The greeting + SOLID/CALIBRATING data-confidence pill ride in their OWN header row ABOVE the
-        // card, not as a top-end overlay over it (#527). The old overlay sat over the card's "SYNTHESIS"
-        // overline + big status word and, on a narrow phone, collided with them, and squeezing the
-        // status into the leftover width force-broke a single word ("Calibrating" → "Calibrati/ng").
-        // A separate row CAN'T overlap, and the card keeps its FULL width so the status stays one line.
-        // Mirrors the iOS Synthesis header-row layout (TodayView heroSection).
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // The greeting yields/ellipsises first; the pill keeps its full width (#527).
-            Text(
-                greetingWord(),
-                style = NoopType.subhead,
-                color = Palette.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            Spacer(Modifier.weight(1f))
-            // S4 (#205): the one-word readiness read kept on the hero now the full Readiness card folded
-            // into the Charge-ring tap. Push / Maintain / Rest; hidden when there isn't enough history.
-            // Tapping it opens the Charge breakdown, where the full Readiness card now lives.
-            val readinessLevel = remember(days) {
-                if (days.isEmpty()) ReadinessEngine.Level.INSUFFICIENT
-                else ReadinessEngine.evaluate(days, today = logicalDayKeyNow()).level
-            }
-            readinessWord(readinessLevel)?.let { wordRes ->
-                ReadinessHeroPill(word = uiString(wordRes), level = readinessLevel, onTap = onOpenReadiness)
-            }
-            // SOLID only when TODAY's own row carries a settled recovery, a carried prior-day read is
-            // honestly still CALIBRATING for today, matching the iOS pill (keyed on displayDay.recovery).
-            val todayRecovery = day?.recovery
-            StatePill(
-                title = if (todayRecovery != null) uiString(R.string.today_score_solid)
-                else uiString(R.string.score_state_title_calibrating).uppercase(),
-                tone = if (todayRecovery != null) StrandTone.Accent else StrandTone.Neutral,
-            )
-        }
-        // S4: the Synthesis card collapses to a one-liner that expands on tap. The headline (the status) is
-        // the SAME in both states, only the detail body and chrome fold, never the read (#506).
         val status = if (recoveryCalibration != null) uiString(R.string.score_state_title_calibrating)
         else synthesisWord(recovery)
         val detail = if (recoveryCalibration != null) {
@@ -3171,98 +2929,21 @@ private fun SynthesisHeroCard(
         } else {
             synthesisDetail(day)
         }
-        if (synthesisExpanded) {
-            val expandedInteraction = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .liquidPress(expandedInteraction)
-                    .clickable(
-                        interactionSource = expandedInteraction,
-                        indication = null,
-                        onClickLabel = uiString(R.string.today_action_collapse),
-                        onClick = onToggleSynthesis,
-                    ),
-            ) {
-                InsightCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    category = uiString(R.string.today_section_synthesis),
-                    status = status,
-                    detail = detail,
-                    // The SYNTHESIS headline reads WHITE (textPrimary), not the recovery/charge colour, the
-                    // key iOS Design-Reset change (TodayView.synthesisSection passes statusColor textPrimary).
-                    statusColor = Palette.textPrimary,
-                    // FLAT card to match iOS (no navy-bevel gradient / border): identity comes from the white
-                    // headline alone. tint = null routes to the neutral FLAT surfaceRaised + hairline path.
-                    tint = null,
-                )
-            }
-        } else {
-            // Collapsed: a one-liner with the SYNTHESIS overline, the status headline and a down-chevron.
-            val collapsedInteraction = remember { MutableInteractionSource() }
-            NoopCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .liquidPress(collapsedInteraction)
-                    .clickable(
-                        interactionSource = collapsedInteraction,
-                        indication = null,
-                        onClickLabel = uiString(R.string.today_action_expand_full_read),
-                        onClick = onToggleSynthesis,
-                    ),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(uiString(R.string.l10n_today_screen_synthesis_876bc749), style = NoopType.overline, color = Palette.textTertiary)
-                        Text(
-                            status,
-                            style = NoopType.headline,
-                            color = Palette.textPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        // While calibrating, the detail carries the progress AND, when nights are arriving
-                        // empty, the reason. Collapsed used to show only "Calibrating", which is the state
-                        // the field report was taken in: the explanation existed one tap away and the
-                        // wearer had no way to know it was there. iOS never gated this line; matching it.
-                        if (recoveryCalibration != null) {
-                            Text(
-                                detail,
-                                style = NoopType.caption,
-                                color = Palette.textSecondary,
-                            )
-                        }
-                    }
-                    Icon(
-                        Icons.Filled.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = Palette.textTertiary,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-            }
+    NoopCard(padding = Metrics.space12) {
+        Row(
+            modifier = Modifier.fillMaxWidth().combinedClickable(
+                onClick = onToggleSynthesis,
+                onLongClick = onOpenReadiness,
+                onLongClickLabel = uiString(R.string.today_action_full_readiness),
+            ),
+            horizontalArrangement = Arrangement.spacedBy(Metrics.space12),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Palette.chargeColor,
+                modifier = Modifier.size(Metrics.iconSmall))
+            Text(if (synthesisExpanded) detail else status,
+                style = NoopType.subhead, color = Palette.textPrimary, modifier = Modifier.weight(1f))
         }
-    }
-}
-
-/**
- * S4 (#205): the one-word readiness pill on the hero (Push / Maintain / Rest). A small tinted capsule
- * matching the score-pill chrome, coloured by the readiness level; tapping opens the Charge breakdown sheet
- * where the full Readiness card lives. Mirrors the iOS readinessHeroPill.
- */
-@Composable
-private fun ReadinessHeroPill(word: String, level: ReadinessEngine.Level, onTap: () -> Unit) {
-    val tone = readinessColor(level)
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(tone.copy(alpha = 0.12f))
-            .border(1.dp, tone.copy(alpha = 0.32f), RoundedCornerShape(50))
-            .clickable(onClickLabel = uiString(R.string.today_action_full_readiness), onClick = onTap)
-            .padding(horizontal = 10.dp, vertical = 5.dp)
-            .semantics { contentDescription = uiString(R.string.l10n_today_screen_readiness_word_749b3330, word) },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(word.uppercase(), style = NoopType.overline, color = tone)
     }
 }
 
@@ -7506,15 +7187,6 @@ private fun rememberTrendWindow(
 
 // MARK: - Derived text (ported from TodayView.swift)
 
-@Composable
-private fun greetingWord(): String {
-    val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-    return when {
-        h < 12 -> uiString(R.string.today_greeting_morning)
-        h < 17 -> uiString(R.string.today_greeting_afternoon)
-        else -> uiString(R.string.today_greeting_evening)
-    }
-}
 
 @Composable
 private fun synthesisWord(score: Double?): String {

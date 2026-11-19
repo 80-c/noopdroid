@@ -2871,4 +2871,17 @@
     <string name="redesign_back">Atrás</string>
     <string name="redesign_live_bpm">%1$d lpm</string>
     <string name="redesign_last_seven_days">Últimos 7 días</string>
+    <string name="redesign_quick_actions">Acciones rápidas</string>
+    <string name="redesign_live_heart_rate">Frecuencia cardíaca en directo</string>
+    <string name="redesign_stage_awake">Despierto</string>
+    <string name="redesign_stage_light">Ligero</string>
+    <string name="redesign_stage_deep">Profundo</string>
+    <string name="redesign_stage_rem">REM</string>
+    <string name="redesign_zone">Zona %1$d</string>
+    <string name="redesign_last_twenty_minutes">Últimos 20 minutos</string>
+    <string name="redesign_recent_workouts">Entrenamientos recientes</string>
+    <string name="redesign_minutes">%1$d min</string>
+    <string name="redesign_recovery_average">Recuperación media</string>
+    <string name="redesign_strain_average">Esfuerzo medio</string>
+    <string name="redesign_recovery_strain_chart">Recuperación y esfuerzo diarios</string>
 </resources>

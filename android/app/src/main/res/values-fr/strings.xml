@@ -2870,4 +2870,17 @@
     <string name="redesign_back">Retour</string>
     <string name="redesign_live_bpm">%1$d bpm</string>
     <string name="redesign_last_seven_days">7 derniers jours</string>
+    <string name="redesign_quick_actions">Actions rapides</string>
+    <string name="redesign_live_heart_rate">Fréquence cardiaque en direct</string>
+    <string name="redesign_stage_awake">Éveil</string>
+    <string name="redesign_stage_light">Léger</string>
+    <string name="redesign_stage_deep">Profond</string>
+    <string name="redesign_stage_rem">REM</string>
+    <string name="redesign_zone">Zone %1$d</string>
+    <string name="redesign_last_twenty_minutes">20 dernières minutes</string>
+    <string name="redesign_recent_workouts">Entraînements récents</string>
+    <string name="redesign_minutes">%1$d min</string>
+    <string name="redesign_recovery_average">Récupération moyenne</string>
+    <string name="redesign_strain_average">Effort moyen</string>
+    <string name="redesign_recovery_strain_chart">Récupération et effort par jour</string>
 </resources>

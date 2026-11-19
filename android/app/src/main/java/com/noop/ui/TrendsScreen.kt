@@ -50,6 +50,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -161,7 +162,6 @@ fun TrendsScreen(
     val rest = remember(days, range, sleepPerfByDay) {
         resolveMetric(days, range) { d -> sleepPerfByDay[d.day] }
     }
-    val recAvg = recovery.values.averageOrNull()
     val rangeSubtitle = range.days?.let { dayCount ->
         stringResource(R.string.trends_trailing_days, dayCount)
     } ?: stringResource(R.string.trends_all_history)
@@ -180,73 +180,26 @@ fun TrendsScreen(
         // (Today / metric-detail parity — the same two prefs drive the same two behaviours everywhere).
         fullBleedBackground = screenBackdropFullBleed(showDayCycleBackground, skyBehindCards),
     ) {
+        item {
+            SegmentedPillControl(
+                items = TrendsRange.entries.toList(),
+                selection = range,
+                label = { it.label },
+                onSelect = { range = it },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            val selectedWindow = remember(days, range) {
+                val date = days.maxOfOrNull { it.day }?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                val start = date?.let { end -> range.days?.let { end.minusDays(it.toLong() - 1) } }?.toString()
+                if (start == null) days else days.filter { it.day >= start }
+            }
+            TrendsOverview(selectedWindow, effortScale)
+        }
         if (days.isEmpty()) {
             item { EmptyTrends() }
             return@LazyScreenScaffold
-        }
-
-        // The main card list ripples in once on appear (Reduce-Motion safe), mirroring the iOS
-        // staggeredAppear sequence , each top-level section is one staggered child.
-
-        // The range controls all of the daily trend cards below.
-        item {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Metrics.space8),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SegmentedPillControl(
-                        items = TrendsRange.entries.toList(),
-                        selection = range,
-                        label = { it.label },
-                        onSelect = { range = it },
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TrendsRangeCaption(range = range, fullSubtitle = rangeSubtitle)
-                }
-                Text(
-                    recovery.caption,
-                    style = NoopType.footnote,
-                    color = if (recovery.widened) Palette.statusWarning else Palette.textTertiary,
-                )
-            }
-        }
-
-        // --- Hero , charge over time. Charge (green) world: domain card wash, a crisp flat line with a
-        // bright "now" end-cap, and a TrendChip for the window's move. ---
-        item {
-            ChartCard(
-                modifier = Modifier.staggeredAppear(index = 3),
-                title = stringResource(R.string.trends_charge),
-                // The range bar above already prints the authoritative reading-count caption;
-                // the hero only names its window so the count isn't doubled in one card height.
-                subtitle = rangeSubtitle,
-                trailing = recAvg?.let { "${it.roundToInt()}" },
-                // LIQUID hero: the translucent-black frosted wrapper + a small count-up Charge vessel accent
-                // in the header (the screen's one headline single value — the window-average Charge). The
-                // line chart below stays crisp. Small multiples pass liquidHero = false → untouched.
-                liquidHero = true,
-                headlineValue = recAvg,
-                color = Palette.chargeColor,
-                tipColor = Palette.chargeBright,
-                values = recovery.values,
-                dates = recovery.dates,
-                formatY = { "${it.roundToInt()}" },
-                change = periodChange(recovery.values),
-                higherIsBetter = true,
-                changeFmt = { "${it.roundToInt()}" },
-                // Lift the ceiling ~6% so a near-100 peak and the now-cap halo clear the top gridline ,
-                // mirrors the iOS hero's `valueRange: 0...106`.
-                chartHeadroom = 0.06f,
-                footer = listOf(
-                    stringResource(R.string.trends_avg) to (recAvg?.let { "${it.roundToInt()}" } ?: EM_DASH),
-                    stringResource(R.string.trends_peak) to (recovery.values.maxOrNull()?.let { "${it.roundToInt()}" } ?: EM_DASH),
-                    stringResource(R.string.trends_low) to (recovery.values.minOrNull()?.let { "${it.roundToInt()}" } ?: EM_DASH),
-                    stringResource(R.string.trends_days) to "${recovery.values.size}",
-                ),
-            )
         }
 
         // --- Week-in-review digest (#208) with prev/next week browsing (#710). Past weeks render in the
@@ -575,25 +528,78 @@ private enum class TrendsRange(val days: Int?, val label: String, val longName: 
 }
 
 @Composable
-private fun TrendsRangeCaption(range: TrendsRange, fullSubtitle: String) {
-    val days = range.days
-    if (days == null) {
-        Overline(fullSubtitle, color = Palette.textTertiary)
-    } else {
-        // Keep both lines leading-aligned while the row's weighted spacer pins this
-        // intrinsic-width column to the shared trailing content edge.
-        Column(
-            modifier = Modifier.clearAndSetSemantics {
-                contentDescription = fullSubtitle
-            },
-            horizontalAlignment = Alignment.Start,
-        ) {
-            Overline(stringResource(R.string.trends_trailing), color = Palette.textTertiary)
-            Overline(
-                pluralStringResource(R.plurals.trends_n_days, days, days),
-                color = Palette.textTertiary,
-            )
+private fun TrendsOverview(days: List<DailyMetric>, effortScale: EffortScale) {
+    val points = remember(days) {
+        days.mapNotNull { day ->
+            val date = runCatching { LocalDate.parse(day.day) }.getOrNull()
+            if (date == null) null else date to day
+        }.sortedBy { it.first }
+    }
+    val recovery = days.mapNotNull { it.recovery }.averageOrNull()
+    val strain = days.mapNotNull { it.strain }.averageOrNull()
+    val chargeColor = Palette.chargeColor
+    val effortColor = Palette.effortColor
+    val trackColor = Palette.hairline
+    NoopCard {
+        Column(verticalArrangement = Arrangement.spacedBy(Metrics.space12)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Metrics.space24)) {
+                TrendOverviewValue(uiString(R.string.redesign_recovery_average), recovery?.roundToInt()?.toString(), chargeColor)
+                TrendOverviewValue(uiString(R.string.redesign_strain_average),
+                    strain?.let { UnitFormatter.effortDisplay(it, effortScale) }, effortColor)
+            }
+            if ((recovery != null || strain != null) && points.isNotEmpty()) {
+                val first = points.first().first
+                val last = points.last().first
+                val span = java.time.temporal.ChronoUnit.DAYS.between(first, last).coerceAtLeast(0)
+                val chartLabel = uiString(R.string.redesign_recovery_strain_chart)
+                Canvas(Modifier.fillMaxWidth().height(Metrics.trendStripHeight).semantics {
+                    contentDescription = chartLabel
+                }) {
+                    val step = size.width / (span + 1).toFloat()
+                    for (line in 1..3) {
+                        val y = size.height * line / 4
+                        drawLine(trackColor, Offset(0f, y), Offset(size.width, y))
+                    }
+                    val recoveryPath = androidx.compose.ui.graphics.Path()
+                    var previousDay: Long? = null
+                    points.forEach { (date, day) ->
+                        val offset = java.time.temporal.ChronoUnit.DAYS.between(first, date)
+                        val x = (offset + 0.5f) * step
+                        day.strain?.let { value ->
+                            val barHeight = (value / 100.0).coerceIn(0.0, 1.0).toFloat() * size.height
+                            val width = minOf(step * 0.68f, Metrics.space12.toPx())
+                            drawRoundRect(
+                                color = effortColor.copy(alpha = 0.68f),
+                                topLeft = Offset(x - width / 2, size.height - barHeight),
+                                size = androidx.compose.ui.geometry.Size(width, barHeight),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(Metrics.cornerXs.toPx()),
+                            )
+                        }
+                        val value = day.recovery
+                        if (value != null) {
+                            val y = (1 - (value / 100.0).coerceIn(0.0, 1.0)).toFloat() * size.height
+                            if (previousDay == offset - 1) recoveryPath.lineTo(x, y) else recoveryPath.moveTo(x, y)
+                            if (span < 31) drawCircle(chargeColor, radius = Metrics.space2.toPx(), center = Offset(x, y))
+                            previousDay = offset
+                        } else previousDay = null
+                    }
+                    drawPath(recoveryPath, chargeColor, style = androidx.compose.ui.graphics.drawscope.Stroke(Metrics.space2.toPx()))
+                }
+                val fmt = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(first.format(fmt), style = NoopType.caption, color = Palette.textTertiary)
+                    if (last != first) Text(last.format(fmt), style = NoopType.caption, color = Palette.textTertiary)
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun TrendOverviewValue(label: String, value: String?, color: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(Metrics.space4)) {
+        Text(label, style = NoopType.caption, color = Palette.textSecondary)
+        Text(value ?: "—", style = NoopType.number(28f), color = color)
     }
 }
 

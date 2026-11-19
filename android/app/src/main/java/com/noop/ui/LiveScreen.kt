@@ -116,6 +116,24 @@ fun LiveScreen(
     val activeDeviceName by viewModel.activeDeviceName.collectAsStateWithLifecycle()
     val activeWorkout by viewModel.activeWorkout.collectAsStateWithLifecycle()
     val lastWorkout by viewModel.lastWorkout.collectAsStateWithLifecycle()
+    val workouts by viewModel.workouts.collectAsStateWithLifecycle()
+    val strapId by viewModel.activeStrapIdFlow.collectAsStateWithLifecycle()
+    LaunchedEffect(lastWorkout?.endTs, strapId) { viewModel.loadWorkouts() }
+    var recentHr by remember(strapId) { mutableStateOf(emptyList<com.noop.data.HrBucket>()) }
+    LaunchedEffect(strapId) {
+        val deviceId = strapId ?: return@LaunchedEffect
+        while (true) {
+            val now = System.currentTimeMillis() / 1000L
+            recentHr = try {
+                viewModel.repo.hrBucketsForDevice(deviceId, now - 20 * 60L, now, bucketSeconds = 30L)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                emptyList()
+            }
+            delay(30_000)
+        }
+    }
 
     // Exercise-distance preference (#1913). Stored workout data remains SI.
     val context = LocalContext.current
@@ -235,10 +253,14 @@ fun LiveScreen(
         fullBleedBackground = screenBackdropFullBleed(showDayCycleBackground, skyBehindCards),
     ) {
 
-        // Body console — focal live HR VESSEL + live physiology (R-R thread, rolling RMSSD, frame/event).
         item {
-        BodyConsole(live = live, bpm = bpm, activeConnection = activeConnection, zone = liveZone,
-            activeIsOura = activeIsOura, ringPhase = ringPhase)
+            ActivityHeartCard(
+                bpm = bpm,
+                zone = liveZone,
+                recentHr = recentHr,
+                status = if (activeIsOura) ringStatusCopy(ringPhase, streaming = live.connected && live.streamingLiveHR)
+                    else signalTrustSummary(live, activeConnection),
+            )
         }
 
         item {
@@ -263,6 +285,10 @@ fun LiveScreen(
                     }
                 }
             }
+        }
+
+        if (onOpenWorkouts != null) {
+            item { ActivityRecentWorkouts(workouts.take(3), effortScale, onOpenWorkouts) }
         }
 
         // Active band row (MW-6) — names the band the console is reading, with a "Manage devices"
@@ -386,6 +412,10 @@ fun LiveScreen(
             }
         }
         }
+        }
+
+        item {
+            NoopCard { PhysiologyStack(live = live, activeConnection = activeConnection) }
         }
 
         // Signal Trust rail — one tile per signal that has to be current for the console to be trusted.
@@ -1115,69 +1145,74 @@ private fun ActivityTool(label: Int, onClick: () -> Unit, modifier: Modifier) {
 }
 
 @Composable
-private fun BodyConsole(
-    live: LiveState, bpm: Int?, activeConnection: Boolean, zone: Int,
-    activeIsOura: Boolean, ringPhase: com.noop.ble.OuraLiveSource.LinkPhase,
-) {
-    // The liquid hero CARD: a translucent near-black that floats over the day-of-sky so the HR vessel + the
-    // white count-up number stay crisp — the card does the contrast work, not a muted sky. A rounded 26
-    // corner + a faint white hairline give it the frosted-glass edge of the liquid Today heroCard
-    // (heroFill = rgba(13,14,20,.80), stroke white@0.11). Mirrors the pilot LiquidTodayView heroCard.
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(LIVE_HERO_RADIUS))
-            .background(Palette.heroFill.copy(alpha = Palette.heroFill.alpha * CardAppearance.opacity))
-            .border(1.dp, Palette.heroBorder.copy(alpha = Palette.heroBorder.alpha * CardAppearance.opacity), RoundedCornerShape(LIVE_HERO_RADIUS))
-            .padding(20.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            HeartReadout(live = live, bpm = bpm, activeConnection = activeConnection, zone = zone,
-                activeIsOura = activeIsOura, ringPhase = ringPhase)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(Palette.hairline),
+private fun ActivityHeartCard(bpm: Int?, zone: Int, recentHr: List<com.noop.data.HrBucket>, status: String) {
+    NoopCard(padding = Metrics.space16) {
+        Column(verticalArrangement = Arrangement.spacedBy(Metrics.space8)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Metrics.space6), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(Metrics.space6).background(
+                    if (bpm != null) Palette.metricRose else Palette.textTertiary,
+                    androidx.compose.foundation.shape.CircleShape,
+                ))
+                Text(uiString(R.string.redesign_live_heart_rate), style = NoopType.caption,
+                    color = Palette.textSecondary, modifier = Modifier.weight(1f))
+                if (bpm != null && zone > 0) {
+                    Text(uiString(R.string.redesign_zone, zone), style = NoopType.caption, color = Palette.textSecondary)
+                }
+            }
+            Text(
+                bpm?.let { uiString(R.string.redesign_live_bpm, it) } ?: "—",
+                style = NoopType.number(46f), color = Palette.textPrimary,
             )
-            PhysiologyStack(live = live, activeConnection = activeConnection)
+            if (recentHr.size >= 2) {
+                LineChart(
+                    values = recentHr.map { it.avgBpm },
+                    modifier = Modifier.fillMaxWidth().height(Metrics.trendStripHeight),
+                    timestamps = recentHr.map { it.bucket },
+                    color = Palette.metricRose, fill = false,
+                )
+                Text(uiString(R.string.redesign_last_twenty_minutes), style = NoopType.caption, color = Palette.textTertiary)
+            } else {
+                Text(status, style = NoopType.caption, color = Palette.textTertiary)
+            }
         }
     }
 }
 
 @Composable
-private fun HeartReadout(
-    live: LiveState, bpm: Int?, activeConnection: Boolean, zone: Int,
-    activeIsOura: Boolean, ringPhase: com.noop.ble.OuraLiveSource.LinkPhase,
+private fun ActivityRecentWorkouts(
+    workouts: List<com.noop.data.WorkoutRow>,
+    effortScale: EffortScale,
+    onOpenWorkouts: () -> Unit,
 ) {
-    // Tint by the live HR zone when streaming, the Effort world otherwise — the workouts/live colour world
-    // (UNCHANGED from the hand-drawn ring this replaced: same zone→colour math, same value-sampled tint).
-    val tint = when {
-        bpm == null -> Palette.textSecondary
-        zone >= 1 -> Palette.hrZoneColor(zone)
-        else -> Palette.effortColor
-    }
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Overline("Heart Rate")
-        Text(
-            bpm?.let { uiString(R.string.redesign_live_bpm, it) } ?: "—",
-            style = NoopType.number(44f),
-            color = tint,
-        )
-        Text(
-            // A ring reads its OWN phase (#2305, #2304): `live.connected` is whichever source last wrote
-            // it, and under a ring parked in the nonce handshake it read "Connected, waiting for a
-            // streaming state" for an hour (#2303).
-            if (activeIsOura) ringStatusCopy(ringPhase, streaming = live.connected && live.streamingLiveHR)
-            else signalTrustSummary(live, activeConnection),
-            style = NoopType.footnote,
-            color = Palette.textTertiary,
-            textAlign = TextAlign.Center,
-        )
+    NoopCard(padding = Metrics.space12) {
+        Column(verticalArrangement = Arrangement.spacedBy(Metrics.space8)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(uiString(R.string.redesign_recent_workouts), style = NoopType.caption,
+                    color = Palette.accent, modifier = Modifier.weight(1f))
+                androidx.compose.material3.TextButton(onClick = onOpenWorkouts) {
+                    Text(uiString(R.string.nav_workouts), style = NoopType.caption)
+                }
+            }
+            if (workouts.isEmpty()) {
+                Text(uiString(R.string.l10n_workouts_screen_no_workouts_yet_85a92042),
+                    style = NoopType.subhead, color = Palette.textSecondary)
+            }
+            workouts.forEach { workout ->
+                androidx.compose.material3.HorizontalDivider(color = Palette.hairline)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(workout.sport, style = NoopType.headline, color = Palette.textPrimary)
+                        val seconds = workout.durationS ?: (workout.endTs - workout.startTs).toDouble()
+                        Text(uiString(R.string.redesign_minutes, (seconds / 60).roundToInt().coerceAtLeast(0)),
+                            style = NoopType.caption, color = Palette.textTertiary)
+                    }
+                    workout.strain?.let {
+                        Text(UnitFormatter.effortDisplay(it, effortScale), style = NoopType.headline,
+                            color = Palette.effortColor)
+                    }
+                }
+            }
+        }
     }
 }
 

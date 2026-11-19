@@ -2900,4 +2900,17 @@
     <string name="redesign_back">Back</string>
     <string name="redesign_live_bpm">%1$d bpm</string>
     <string name="redesign_last_seven_days">Last 7 days</string>
+    <string name="redesign_quick_actions">Quick actions</string>
+    <string name="redesign_live_heart_rate">Live heart rate</string>
+    <string name="redesign_stage_awake">Awake</string>
+    <string name="redesign_stage_light">Light</string>
+    <string name="redesign_stage_deep">Deep</string>
+    <string name="redesign_stage_rem">REM</string>
+    <string name="redesign_zone">Zone %1$d</string>
+    <string name="redesign_last_twenty_minutes">Last 20 minutes</string>
+    <string name="redesign_recent_workouts">Recent workouts</string>
+    <string name="redesign_minutes">%1$d min</string>
+    <string name="redesign_recovery_average">Recovery average</string>
+    <string name="redesign_strain_average">Strain average</string>
+    <string name="redesign_recovery_strain_chart">Daily recovery and strain by date</string>
 </resources>

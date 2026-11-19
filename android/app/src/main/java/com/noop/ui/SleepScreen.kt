@@ -604,7 +604,7 @@ fun SleepScreen(
     }
 
     LazyScreenScaffold(
-        title = uiString(R.string.l10n_sleep_screen_sleep_3cac34e6),
+        title = if (night != null) nightLabel else uiString(R.string.nav_sleep),
         trailing = onOpenYou?.let { action -> @Composable { YouAvatar(action) } },
         rowSpacing = Metrics.space12,
         listState = sleepListState,   // #sleep-layout: the hold-to-drag frame loop drives this list state
@@ -722,26 +722,10 @@ fun SleepScreen(
                             else tilesModel?.performance?.latest,
                     asleepMin = model?.stages?.asleep,
                     source = restHeroSource(imported, night?.dayKey ?: days.lastOrNull()?.day, activeIsOura),
-                    overline = nightLabel,
+                    overline = if (nightOffset == 0 && model?.stages?.asleep != null) {
+                        uiString(R.string.l10n_sleep_screen_asleep_last_night_b969b068)
+                    } else nightLabel,
                 )
-            }
-            item { SleepAlarmsEntry(onOpenAlarms) }
-            // #sleep-layout: a compact "Arrange" affordance (the same Tune entry Today uses) opens the
-            // reorder / show-hide sheet. Pinned just above the arrangeable cards.
-            item {
-                Row(Modifier.fillMaxWidth().padding(top = Metrics.selectorTopUp)) {
-                    Spacer(Modifier.weight(1f))
-                    TextButton(
-                        onClick = { showSleepArrange = true },
-                        colors = ButtonDefaults.textButtonColors(contentColor = Palette.textTertiary),
-                    ) {
-                        Icon(Icons.Filled.Tune, contentDescription = stringResource(R.string.sleep_customize_title), modifier = Modifier.size(Metrics.iconSmall))
-                        Spacer(Modifier.width(Metrics.space4))
-                        // Concise verb on the affordance (the full "Customize Sleep" title is the icon's a11y
-                        // label + the sheet header); reuses Today's generic "Customize" action string.
-                        Text(stringResource(R.string.today_customize_action), style = NoopType.footnote)
-                    }
-                }
             }
             // Analytical cards render in the user's saved order (SleepLayoutPrefs), minus the hidden set.
             // Reordered via the Arrange sheet OR by long-press hold-to-drag on the card (#sleep-layout,
@@ -750,7 +734,8 @@ fun SleepScreen(
             // #sleep-layout: persist the live hold-to-drag reorder when the gesture drops (the in-memory
             // `sleepSectionOrder` already moved live in the frame loop; this writes it through).
             val persistSleepOrder = { SleepLayoutPrefs.setOrder(context, sleepSectionOrder) }
-            sleepSectionOrder.filterNot { it in hiddenSections }.forEach { section ->
+            val visibleSleepSections = sleepSectionOrder.filterNot { it in hiddenSections }
+            visibleSleepSections.forEach { section ->
               val k = SLEEP_SECTION_KEY_PREFIX + section.raw
               when (section) {
                 SleepSection.SLEEP_MARKS -> item(key = k) {
@@ -1003,6 +988,25 @@ fun SleepScreen(
                 }
               }
             }
+            item { SleepAlarmsEntry(onOpenAlarms) }
+            // #sleep-layout: a compact "Arrange" affordance (the same Tune entry Today uses) opens the
+            // reorder / show-hide sheet. Pinned just above the arrangeable cards.
+            item {
+                Row(Modifier.fillMaxWidth().padding(top = Metrics.selectorTopUp)) {
+                    Spacer(Modifier.weight(1f))
+                    TextButton(
+                        onClick = { showSleepArrange = true },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Palette.textTertiary),
+                    ) {
+                        Icon(Icons.Filled.Tune, contentDescription = stringResource(R.string.sleep_customize_title), modifier = Modifier.size(Metrics.iconSmall))
+                        Spacer(Modifier.width(Metrics.space4))
+                        // Concise verb on the affordance (the full "Customize Sleep" title is the icon's a11y
+                        // label + the sheet header); reuses Today's generic "Customize" action string.
+                        Text(stringResource(R.string.today_customize_action), style = NoopType.footnote)
+                    }
+                }
+            }
+
         }
     }
 }
@@ -1266,6 +1270,14 @@ private fun RestHero(score: Double?, asleepMin: Double?, source: String, overlin
 
 // MARK: - 1. HERO — stage breakdown for the navigated night
 
+@Composable
+private fun SleepStageTotal(label: String, minutes: Double, tint: Color, modifier: Modifier) {
+    Column(modifier) {
+        AutoSizeValue(label, NoopType.caption, tint)
+        AutoSizeValue(durationText(minutes), NoopType.captionNumber, Palette.textPrimary)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Hero(
@@ -1356,6 +1368,22 @@ private fun Hero(
             // iOS #988 port: true per-epoch segments (≥ 2 — a single run has no transitions to lay
             // out) get the per-stage timeline rows; the rows ARE the legend, so no footer. Anything
             // else keeps the honest proportional strip + StageBreakdownRows footer.
+            val stageShare = stageSegments(s)
+            if (stageShare.isNotEmpty()) {
+                NoopCard(padding = Metrics.space12) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Metrics.space8)) {
+                        Text(uiString(R.string.l10n_sleep_screen_stages_c1d33ad5),
+                            style = NoopType.caption, color = Palette.accent)
+                        Hypnogram(stageShare, Modifier.clip(RoundedCornerShape(Metrics.cornerPill)))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Metrics.space4)) {
+                            SleepStageTotal(uiString(R.string.redesign_stage_awake), s.awake, Palette.sleepAwake, Modifier.weight(1f))
+                            SleepStageTotal(uiString(R.string.redesign_stage_light), s.light, Palette.sleepLight, Modifier.weight(1f))
+                            SleepStageTotal(uiString(R.string.redesign_stage_deep), s.deep, Palette.sleepDeep, Modifier.weight(1f))
+                            SleepStageTotal(uiString(R.string.redesign_stage_rem), s.rem, Palette.sleepREM, Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
             val real = display.realSegments?.takeIf { it.size >= 2 }
             if (real != null) {
                 // #sleep-chart-style: the opt-in FILLED stepped hypnogram when the user selected it AND the
