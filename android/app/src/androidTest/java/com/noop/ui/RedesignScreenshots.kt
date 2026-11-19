@@ -26,10 +26,35 @@ class RedesignScreenshots {
         assumeTrue(InstrumentationRegistry.getArguments().getString("screenshots") == "true")
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        runBlocking {
+        val recoveryAverage = runBlocking {
             val repo = WhoopRepository.from(context)
             check(repo.daysMerged("my-whoop").isEmpty()) { "Use a fresh emulator install" }
             DemoSeeder.seedIfEmpty(repo)
+            val now = System.currentTimeMillis() / 1000
+            val strap = "my-whoop"
+            // Give the disposable demo night timed periods, preserving its stage order and proportions.
+            val night = repo.sleepSessionsUnion(strap,0,now).maxBy { it.endTs }
+            val stages = org.json.JSONArray(night.stagesJSON)
+            val total = (0 until stages.length()).sumOf { stages.getJSONObject(it).getDouble("min") }
+            var minutes = 0.0
+            var start = night.startTs
+            for (index in 0 until stages.length()) {
+                val stage = stages.getJSONObject(index)
+                minutes += stage.getDouble("min")
+                val end = night.startTs + ((night.endTs - night.startTs) * minutes / total).toLong()
+                stage.put("start",start).put("end",end)
+                start = end
+            }
+            repo.upsertSleepSessions(listOf(night.copy(stagesJSON = stages.toString())))
+            val samples = (0 until 40).map { index ->
+                val bpm = 66 + (5 * kotlin.math.sin(index * 0.37) + 2 * kotlin.math.sin(index * 1.4)).toInt()
+                com.noop.data.HrSample(strap, now - (39-index)*30L, bpm)
+            }
+            com.noop.data.WhoopDatabase.get(context).whoopDao().insertHr(samples)
+            val end = java.time.LocalDate.now()
+            val from = end.minusDays(29)
+            val recovery = repo.resolvedSeries("recovery",strap,from.toString(),end.toString(),strapDeviceId=strap)
+            number(recovery.values.map { it.second }.average())
         }
         NoopPrefs.of(context).edit()
             .putBoolean(NoopPrefs.KEY_ONBOARDED, true)
@@ -61,6 +86,7 @@ class RedesignScreenshots {
             tap("Activity")
             shot("04-activity", "Strain today")
             tap("Trends")
+            compose.waitUntil(60000) { compose.onAllNodesWithText(recoveryAverage).fetchSemanticsNodes().isNotEmpty() }
             shot("05-trends", "Daily scores")
             compose.onNodeWithText("Respiration").performScrollTo()
             shot("scrolled/05-trends-body", "Respiration")

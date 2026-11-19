@@ -78,11 +78,11 @@ internal fun TodayScreen(vm: AppViewModel, you: () -> Unit, recovery: () -> Unit
                 val delta=if(value!=null && baseline!=null) value-baseline else null
                 DRow({history(metric)}) {
                     DText(stringResource(metric.label),17,modifier=Modifier.weight(1f))
-                    DValue(if(metric==DesignMetric.Temp)signed(value,1) else number(value,metric.decimals),metricUnit(metric),20,14)
+                    DValue(if(metric==DesignMetric.Temp)signed(displayReading(metric,value),1) else metricReading(metric,value),metricUnit(metric),20,14)
                     Row(Modifier.width(92.dp).padding(end=6.dp),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
                         val color=if(delta==null)c.textTertiary else if(metric.favorable(delta,baseline,value))c.chargeColor else c.effortColor
                         if(delta!=null) Symbol(if(delta<0)R.drawable.symbol_arrow_downward else R.drawable.symbol_arrow_upward,14,color)
-                        DText(signed(delta,metric.decimals),14,color,true)
+                        DText(signed(displayReading(metric,delta),metric.decimals),14,color,true)
                     }
                 }
                 if(index < vitals.lastIndex) HorizontalDivider(color=c.hairline)

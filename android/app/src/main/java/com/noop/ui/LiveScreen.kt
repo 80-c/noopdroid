@@ -62,10 +62,10 @@ internal fun LiveScreen(vm: AppViewModel, you: () -> Unit, navigate: (String)->U
         value = vm.repo.importedSourceIds(vm.activeStrapId).mapNotNull { vm.repo.latestHr(it) }.maxByOrNull { it.ts }
     }
     val buckets by produceState<List<HrBucket>>(emptyList(),strap) {
-        val id=strap ?: return@produceState
+        val ids=vm.repo.importedSourceIds(strap ?: vm.activeStrapId)
         while(true) {
             val now=System.currentTimeMillis()/1000
-            value=vm.repo.hrBucketsForDevice(id,now-1200,now,30)
+            value=vm.repo.hrBucketsFor(ids,now-1200,now,30)
             delay(30_000)
         }
     }

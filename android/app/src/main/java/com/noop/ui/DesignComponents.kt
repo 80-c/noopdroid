@@ -78,7 +78,7 @@ internal fun DPage(vm: AppViewModel, title: String, overline: String?, you: () -
                 runCatching { context.getSystemService(android.os.UserManager::class.java)?.userName }
                     .getOrNull()?.trim()?.firstOrNull()?.uppercase() ?: missing
             }
-            IconButton(onClick = you, modifier = Modifier.size(48.dp).semantics { contentDescription = desc }) {
+            Box(Modifier.size(48.dp).clickable(onClick=you).semantics { contentDescription = desc },contentAlignment=Alignment.Center) {
                 Box(Modifier.size(44.dp)) {
                     Box(Modifier.fillMaxSize().background(c.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
                         DText(initial,17,c.onPrimaryContainer,true)
@@ -154,7 +154,8 @@ internal fun rangeLabel(days: Int) = stringResource(when(days) {
 @Composable
 internal fun DBottom(current: Destination, select: (Destination) -> Unit) {
     val c = designColors
-    Row(Modifier.fillMaxWidth().height(96.dp).background(c.surfaceRaised).padding(horizontal=8.dp)
+    val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Row(Modifier.fillMaxWidth().height(96.dp + (systemBottom - 32.dp).coerceAtLeast(0.dp)).background(c.surfaceRaised).padding(horizontal=8.dp)
         .padding(bottom=16.dp)) {
         primaryBarTabs.forEach { tab ->
             val active = tab.dest == current

@@ -71,10 +71,10 @@ internal fun RecoveryDetailScreen(vm: AppViewModel, you: () -> Unit, back: () ->
                 Column(Modifier.fillMaxWidth().padding(vertical=12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                         DText(stringResource(labels[i]),17,medium=true)
-                        val unit=stringResource(units[i])
+                        val unit=if(key == ChargeDriverLabel.SKIN_TEMPERATURE)metricUnit(DesignMetric.Temp) else stringResource(units[i])
                         DText(driver?.let { d -> if (key == ChargeDriverLabel.SLEEP_QUALITY)
                             stringResource(R.string.design_sleep_contribution,number(d.value))
-                            else if (key == ChargeDriverLabel.SKIN_TEMPERATURE) signed(d.value,1)+" "+unit
+                            else if (key == ChargeDriverLabel.SKIN_TEMPERATURE) signed(displayReading(DesignMetric.Temp,d.value),1)+" "+unit
                             else d.baseline?.let { stringResource(R.string.design_comparison,number(d.value,if(i>=3)1 else 0),number(it,if(i>=3)1 else 0),unit) }
                             ?: (number(d.value,if(i==4)1 else 0)+" "+unit) } ?: missing,15,c.textSecondary)
                     }

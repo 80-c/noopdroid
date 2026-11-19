@@ -74,8 +74,8 @@ internal fun MetricHistoryScreen(vm: AppViewModel, metric: DesignMetric, you: ()
         DCard(gap=10) {
             Row(horizontalArrangement=Arrangement.spacedBy(14.dp)) {
                 listOf(stringResource(R.string.design_normal,normal?.let {
-                    number(it.start,metric.decimals)+"–"+number(it.endInclusive,metric.decimals) } ?: missing),
-                    stringResource(R.string.design_high,number(hi,metric.decimals)),stringResource(R.string.design_low,number(lo,metric.decimals)))
+                    metricReading(metric,it.start)+"–"+metricReading(metric,it.endInclusive) } ?: missing),
+                    stringResource(R.string.design_high,metricReading(metric,hi)),stringResource(R.string.design_low,metricReading(metric,lo)))
                     .forEachIndexed { i,label ->
                         Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(3.dp)) {
                             val tint=if(i==2)c.effortColor else c.chargeColor
@@ -131,7 +131,12 @@ internal fun MetricHistoryScreen(vm: AppViewModel, metric: DesignMetric, you: ()
                 val delta=effects[habit]?.delta
                 Row(Modifier.heightIn(min=44.dp),verticalAlignment=Alignment.CenterVertically) {
                     DText(habit,16,modifier=Modifier.weight(1f))
-                    DText(signed(delta,metric.decimals),16,if(delta==null)c.textTertiary else if(metric.favorable(delta))c.chargeColor else c.effortColor,true)
+                    val change = when {
+                        delta == null -> missing
+                        metric == DesignMetric.Asleep -> signed(delta * 60)+" "+stringResource(R.string.design_unit_min)
+                        else -> listOf(signed(displayReading(metric,delta),metric.decimals),unit).filter { it.isNotEmpty() }.joinToString(" ")
+                    }
+                    DText(change,16,if(delta==null)c.textTertiary else if(metric.favorable(delta))c.chargeColor else c.effortColor,true)
                 }
                 if(i<habits.lastIndex)HorizontalDivider(color=c.hairline)
             }
