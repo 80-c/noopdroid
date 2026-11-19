@@ -1,0 +1,60 @@
+name: Redesign screen review
+on:
+  push:
+    branches: [android-redesign]
+permissions:
+  contents: read
+concurrency:
+  group: redesign-screen-review
+  cancel-in-progress: true
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build full APK and visual test
+        working-directory: android
+        run: bash gradlew assembleFullDebug assembleFullDebugAndroidTest
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          profile: pixel_2
+          target: default
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            adb shell wm density 320
+            adb shell wm size 824x1830
+            adb shell settings put system accelerometer_rotation 0
+            adb shell settings put system user_rotation 0
+            adb shell cmd uimode night no
+            adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.threebutton
+            adb shell cmd overlay enable-exclusive --category com.android.internal.display.cutout.emulation.tall
+            adb shell wm size
+            adb shell wm density
+            adb shell am get-config
+            adb install -g android/app/build/outputs/apk/full/debug/app-full-debug.apk
+            adb install -g android/app/build/outputs/apk/androidTest/full/debug/app-full-debug-androidTest.apk
+            adb shell am instrument -w -e screenshots true -e lightMode true -e class com.noop.ui.RedesignScreenshots com.noop.whoop.debug.test/androidx.test.runner.AndroidJUnitRunner
+            mkdir -p screen-review
+            adb exec-out run-as com.noop.whoop.debug tar -C files/design-review -cf - . | tar xf - -C screen-review
+            test "$(find screen-review -maxdepth 1 -name '*.png' | wc -l)" -eq 7
+            python3 -c "import glob,struct; assert all(struct.unpack('>II',open(p,'rb').read(24)[16:24])==(824,1830) for p in glob.glob('screen-review/*.png'))"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: seven-screens
+          path: screen-review/
+

@@ -62,6 +62,8 @@ class RedesignScreenshots {
             .putString(NoopPrefs.KEY_LAST_SEEN_CHANGELOG, AppChangelog.CURRENT_VERSION).commit()
         val photos = File(context.filesDir, "design-review").also { it.mkdirs() }
         File(photos, "scrolled").mkdirs()
+        val lightMode = InstrumentationRegistry.getArguments().getString("lightMode") == "true"
+        if (lightMode) AppearancePrefs.set(context, AppearanceMode.LIGHT)
 
         fun shot(name: String, marker: String) {
             compose.waitUntil(30000) { compose.onAllNodesWithText(marker).fetchSemanticsNodes().isNotEmpty() }
@@ -78,6 +80,13 @@ class RedesignScreenshots {
         }
         ActivityScenario.launch(MainActivity::class.java).use {
             shot("01-today", "Vitals vs your 30-day normal")
+            if (lightMode) {
+                compose.onNodeWithContentDescription("You: devices, tools and settings").performClick()
+                shot("scrolled/you-from-today", "Manage devices")
+                compose.onNodeWithText("Settings").performScrollTo()
+                compose.onNodeWithText("Done").assertIsDisplayed().performClick()
+                compose.onNodeWithText("Vitals vs your 30-day normal").assertIsDisplayed()
+            }
             tap("Recovery")
             shot("02-recovery", "What set today's recovery")
             compose.onNodeWithContentDescription("Back").performClick()

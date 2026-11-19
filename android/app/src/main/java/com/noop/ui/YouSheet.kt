@@ -84,10 +84,13 @@ private data class YouItem(val label:Int,val icon:Int,val route:String,val value
             YouItem(R.string.design_export,R.drawable.symbol_upload,"export")),
         R.string.design_app to listOf(YouItem(R.string.nav_alarms,R.drawable.symbol_alarm,"smart_alarm"),
             YouItem(R.string.nav_notifications,R.drawable.symbol_notifications,"notifications"),YouItem(R.string.nav_settings,R.drawable.symbol_settings,"settings")))
+    // Some Android versions inset the sheet's dialog window below a display cutout.
+    // Paint the activity behind that window so the underlying tab cannot peek through.
+    Spacer(Modifier.fillMaxSize().background(c.surfaceBase))
     ModalBottomSheet(onDismissRequest=close,sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true),
+        modifier=Modifier.fillMaxHeight(),shape=RectangleShape,scrimColor=c.surfaceBase,
         containerColor=c.surfaceBase,dragHandle=null) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(top=20.dp,bottom=32.dp),
-            verticalArrangement=Arrangement.spacedBy(18.dp)) {
+        Column(Modifier.fillMaxSize().padding(horizontal=20.dp).padding(top=12.dp)) {
             Box(Modifier.fillMaxWidth().height(48.dp)) {
                 Spacer(Modifier.align(Alignment.TopCenter).size(40.dp,5.dp).background(c.hairlineStrong,CircleShape))
                 TextButton(onClick=close,modifier=Modifier.align(Alignment.CenterEnd)) {
@@ -95,31 +98,34 @@ private data class YouItem(val label:Int,val icon:Int,val route:String,val value
                 }
             }
             DText(stringResource(R.string.redesign_you),32,medium=true)
-            DCard(padding=16,gap=12) {
-                Row(horizontalArrangement=Arrangement.spacedBy(12.dp),verticalAlignment=Alignment.CenterVertically) {
-                    Symbol(R.drawable.symbol_watch,28,if(device.connected)c.chargeColor else c.textTertiary)
-                    Column {
-                        DText(device.name,18,medium=true)
-                        DText(listOf(stringResource(if(device.connected)R.string.design_link else R.string.design_offline),
-                            stringResource(R.string.design_battery,number(device.battery)),syncLabel(live.lastSyncAt)).joinToString(" · "),15,c.textSecondary)
+            Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
+                .padding(top=18.dp,bottom=32.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
+                DCard(padding=16,gap=12) {
+                    Row(horizontalArrangement=Arrangement.spacedBy(12.dp),verticalAlignment=Alignment.CenterVertically) {
+                        Symbol(R.drawable.symbol_watch,28,if(device.connected)c.chargeColor else c.textTertiary)
+                        Column {
+                            DText(device.name,18,medium=true)
+                            DText(listOf(stringResource(if(device.connected)R.string.design_link else R.string.design_offline),
+                                stringResource(R.string.design_battery,number(device.battery)),syncLabel(live.lastSyncAt)).joinToString(" · "),15,c.textSecondary)
+                        }
+                    }
+                    Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                        DAction(stringResource(R.string.redesign_sync_now),device.canSync,Modifier.weight(1f)){vm.syncNow()}
+                        DAction(stringResource(R.string.l10n_live_screen_manage_devices_e5c277ff),modifier=Modifier.weight(1f)){navigate("devices")}
                     }
                 }
-                Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DAction(stringResource(R.string.redesign_sync_now),device.canSync,Modifier.weight(1f)){vm.syncNow()}
-                    DAction(stringResource(R.string.l10n_live_screen_manage_devices_e5c277ff),modifier=Modifier.weight(1f)){navigate("devices")}
-                }
-            }
-            groups.forEach { (title,items)->
-                Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                    DSection(stringResource(title))
-                    DCard(padding=0) {
-                        items.forEachIndexed { i,item ->
-                            DRow({navigate(item.route)}) {
-                                Symbol(item.icon,22,c.textSecondary)
-                                Spacer(Modifier.width(12.dp));DText(stringResource(item.label),17,modifier=Modifier.weight(1f))
-                                item.value?.let { DText(it,15,c.textSecondary) }
+                groups.forEach { (title,items)->
+                    Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                        DSection(stringResource(title))
+                        DCard(padding=0) {
+                            items.forEachIndexed { i,item ->
+                                DRow({navigate(item.route)}) {
+                                    Symbol(item.icon,22,c.textSecondary)
+                                    Spacer(Modifier.width(12.dp));DText(stringResource(item.label),17,modifier=Modifier.weight(1f))
+                                    item.value?.let { DText(it,15,c.textSecondary) }
+                                }
+                                if(i<items.lastIndex)HorizontalDivider(color=c.hairline)
                             }
-                            if(i<items.lastIndex)HorizontalDivider(color=c.hairline)
                         }
                     }
                 }

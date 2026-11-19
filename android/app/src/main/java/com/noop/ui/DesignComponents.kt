@@ -61,8 +61,10 @@ internal fun DCard(modifier: Modifier = Modifier, padding: Int = 14, gap: Int = 
 internal fun DPage(vm: AppViewModel, title: String, overline: String?, you: () -> Unit,
     back: (() -> Unit)? = null, modifier: Modifier = Modifier, sectionGap: Int = 12, content: @Composable ColumnScope.() -> Unit) {
     val c = designColors
-    Column(modifier.fillMaxSize().background(c.surfaceBase).verticalScroll(rememberScrollState())
-        .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 14.dp)) {
+    Column(modifier.fillMaxSize().background(c.surfaceBase)
+        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+        .verticalScroll(rememberScrollState())
+        .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 14.dp)) {
         if (back != null) IconButton(onClick = back, modifier = Modifier.offset(x = (-12).dp).size(48.dp)) {
             Symbol(R.drawable.symbol_arrow_back,24,c.textPrimary,stringResource(R.string.redesign_back))
         }
