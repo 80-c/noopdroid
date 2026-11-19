@@ -58,6 +58,9 @@ internal fun LiveScreen(vm: AppViewModel, you: () -> Unit, navigate: (String)->U
     DisposableEffect(vm){vm.requestRealtimeHr(); onDispose {vm.releaseRealtimeHr()}}
     LaunchedEffect(strap,finished?.endTs){vm.loadWorkouts()}
     LaunchedEffect(vm){if(vm.consumeActiveWorkoutRequest())recording=true}
+    val saved by produceState<com.noop.data.HrSample?>(null, strap, live.lastSyncAt) {
+        value = vm.repo.importedSourceIds(vm.activeStrapId).mapNotNull { vm.repo.latestHr(it) }.maxByOrNull { it.ts }
+    }
     val buckets by produceState<List<HrBucket>>(emptyList(),strap) {
         val id=strap ?: return@produceState
         while(true) {
@@ -74,12 +77,14 @@ internal fun LiveScreen(vm: AppViewModel, you: () -> Unit, navigate: (String)->U
     DPage(vm,stringResource(R.string.redesign_activity),stringResource(R.string.redesign_activity_subtitle),you) {
         DCard(padding=16,gap=10) {
             val streaming=live.connected && live.streamingLiveHR && bpm!=null
-            val value=if(streaming)bpm?.toDouble() else buckets.lastOrNull()?.avgBpm
+            val value=if(streaming)bpm?.toDouble() else saved?.bpm?.toDouble() ?: buckets.lastOrNull()?.avgBpm
             Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Spacer(Modifier.size(8.dp).background(c.metricRose,CircleShape))
                 DText(stringResource(R.string.redesign_live_heart_rate),15,c.textSecondary,true,Modifier.weight(1f))
-                DText(if(streaming)stringResource(R.string.redesign_zone,profile.hrZoneSet.zoneNumber(value!!))
-                    else buckets.lastOrNull()?.let {stringResource(R.string.design_saved,relativeAgo(it.bucket))} ?: stringResource(R.string.design_offline),14,c.textSecondary)
+                val zones = listOf(R.string.design_zone_below, R.string.design_zone_rest, R.string.design_zone_fat,
+                    R.string.design_zone_aerobic, R.string.design_zone_threshold, R.string.design_zone_max)
+                DText(if(streaming)stringResource(zones[profile.hrZoneSet.zoneNumber(value!!).coerceIn(0,5)])
+                    else (saved?.ts ?: buckets.lastOrNull()?.bucket)?.let {stringResource(R.string.design_saved,relativeAgo(it))} ?: stringResource(R.string.design_offline),14,c.textSecondary)
             }
             DValue(number(value),stringResource(R.string.design_unit_bpm),64,20)
             Canvas(Modifier.fillMaxWidth().height(56.dp)) {

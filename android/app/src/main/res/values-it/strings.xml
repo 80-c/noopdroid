@@ -2971,4 +2971,11 @@
     <string name="tools_edit_nap">Modifica orari del pisolino</string>
     <string name="tools_edit_nap_edited">Modifica orari del pisolino (modificati)</string>
     <string name="tools_share_recap">Condividi riepilogo</string>
+    <string name="design_sleep_contribution">Punteggio di stanotte: %1$s</string>
+    <string name="design_zone_below">Sotto la zona 1</string>
+    <string name="design_zone_rest">Zona 1 · Riposo</string>
+    <string name="design_zone_fat">Zona 2 · Brucia grassi</string>
+    <string name="design_zone_aerobic">Zona 3 · Aerobica</string>
+    <string name="design_zone_threshold">Zona 4 · Soglia</string>
+    <string name="design_zone_max">Zona 5 · Massima</string>
 </resources>

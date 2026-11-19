@@ -2898,4 +2898,11 @@
     <string name="tools_edit_nap">Изменить время дневного сна</string>
     <string name="tools_edit_nap_edited">Изменить время дневного сна (изменено)</string>
     <string name="tools_share_recap">Поделиться сводкой</string>
+    <string name="design_sleep_contribution">Балл за ночь: %1$s</string>
+    <string name="design_zone_below">Ниже зоны 1</string>
+    <string name="design_zone_rest">Зона 1 · Покой</string>
+    <string name="design_zone_fat">Зона 2 · Сжигание жира</string>
+    <string name="design_zone_aerobic">Зона 3 · Аэробная</string>
+    <string name="design_zone_threshold">Зона 4 · Порог</string>
+    <string name="design_zone_max">Зона 5 · Максимум</string>
 </resources>

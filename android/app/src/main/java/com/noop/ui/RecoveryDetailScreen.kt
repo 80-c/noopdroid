@@ -41,7 +41,7 @@ internal fun RecoveryDetailScreen(vm: AppViewModel, you: () -> Unit, back: () ->
     val yesterday=days.lastOrNull { it.day==today.minusDays(1).toString() }?.recovery
     val drivers=remember(bases,day){ recoveryChargeDrivers(bases,day).associateBy { it.label } }
     val c=designColors
-    DPage(vm,stringResource(R.string.design_recovery),null,you,back) {
+    DPage(vm,stringResource(R.string.design_recovery),null,you,back,sectionGap=14) {
         Row(verticalAlignment=Alignment.Bottom,horizontalArrangement=Arrangement.spacedBy(14.dp)) {
             DText(number(score),72,c.chargeColor,true,height=72)
             Column {
@@ -72,13 +72,15 @@ internal fun RecoveryDetailScreen(vm: AppViewModel, you: () -> Unit, back: () ->
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                         DText(stringResource(labels[i]),17,medium=true)
                         val unit=stringResource(units[i])
-                        DText(driver?.let { d -> d.baseline?.let { stringResource(R.string.design_comparison,number(d.value,if(i>=3)1 else 0),number(it,if(i>=3)1 else 0),unit) }
+                        DText(driver?.let { d -> if (key == ChargeDriverLabel.SLEEP_QUALITY)
+                            stringResource(R.string.design_sleep_contribution,number(d.value))
+                            else if (key == ChargeDriverLabel.SKIN_TEMPERATURE) signed(d.value,1)+" "+unit
+                            else d.baseline?.let { stringResource(R.string.design_comparison,number(d.value,if(i>=3)1 else 0),number(it,if(i>=3)1 else 0),unit) }
                             ?: (number(d.value,if(i==4)1 else 0)+" "+unit) } ?: missing,15,c.textSecondary)
                     }
                     Canvas(Modifier.width(240.dp).height(16.dp).align(Alignment.CenterHorizontally)) {
                         val barH=10.dp.toPx()
                         val y=(size.height-barH)/2
-                        drawRoundRect(c.surfaceInset,Offset(0f,y),Size(size.width,barH),CornerRadius(5.dp.toPx()))
                         val length=(driver?.deltaPoints ?: 0)*center.x/maxPoints
                         if(length!=0f) drawRoundRect(if(length>0)c.chargeColor else c.effortColor,
                             Offset(center.x+min(0f,length),y),Size(abs(length),barH),CornerRadius(5.dp.toPx()))

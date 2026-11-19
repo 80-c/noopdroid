@@ -3002,4 +3002,11 @@
     <string name="tools_edit_nap">Modifier les heures de sieste</string>
     <string name="tools_edit_nap_edited">Modifier les heures de sieste (modifiées)</string>
     <string name="tools_share_recap">Partager le récapitulatif</string>
+    <string name="design_sleep_contribution">Score de la nuit : %1$s</string>
+    <string name="design_zone_below">Sous la zone 1</string>
+    <string name="design_zone_rest">Zone 1 · Repos</string>
+    <string name="design_zone_fat">Zone 2 · Brûlage des graisses</string>
+    <string name="design_zone_aerobic">Zone 3 · Aérobie</string>
+    <string name="design_zone_threshold">Zone 4 · Seuil</string>
+    <string name="design_zone_max">Zone 5 · Maximum</string>
 </resources>

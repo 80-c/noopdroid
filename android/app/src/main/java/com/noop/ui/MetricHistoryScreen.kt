@@ -67,7 +67,7 @@ internal fun MetricHistoryScreen(vm: AppViewModel, metric: DesignMetric, you: ()
                     DText(title,14,c.textSecondary,true)
                     val color=if(i==0 || normal==null || value==null)c.textPrimary else
                         if(value in normal || metric.favorable(value-baseline!!.baseline,baseline.baseline,value))c.chargeColor else c.effortColor
-                    DValue(number(value,metric.decimals),unit,30,15,color)
+                    DValue(metricReading(metric,value),unit,30,15,color)
                 }
             }
         }
@@ -113,7 +113,7 @@ internal fun MetricHistoryScreen(vm: AppViewModel, metric: DesignMetric, you: ()
                     DText(when(i){0->stringResource(R.string.design_this_week);1->stringResource(R.string.design_last_week)
                         else->stringResource(R.string.design_weeks_ago,i)},16,modifier=Modifier.width(104.dp))
                     Box(Modifier.weight(1f)) { DTrack(value?.let { abs(it)/(averages.filterNotNull().maxOfOrNull { n -> abs(n) } ?: 1.0).coerceAtLeast(.01) },c.textSecondary,8) }
-                    Box(Modifier.width(64.dp),contentAlignment=Alignment.CenterEnd) { DValue(number(value,metric.decimals),unit,18,13) }
+                    Box(Modifier.widthIn(min=64.dp),contentAlignment=Alignment.CenterEnd) { DValue(metricReading(metric,value),unit,18,13) }
                 }
                 if(i<3)HorizontalDivider(color=c.hairline)
             }

@@ -3019,4 +3019,11 @@
     <string name="tools_edit_nap">Edytuj godziny drzemki</string>
     <string name="tools_edit_nap_edited">Edytuj godziny drzemki (zmienione)</string>
     <string name="tools_share_recap">Udostępnij podsumowanie</string>
+    <string name="design_sleep_contribution">Wynik ostatniej nocy: %1$s</string>
+    <string name="design_zone_below">Poniżej strefy 1</string>
+    <string name="design_zone_rest">Strefa 1 · Spoczynek</string>
+    <string name="design_zone_fat">Strefa 2 · Spalanie tłuszczu</string>
+    <string name="design_zone_aerobic">Strefa 3 · Tlenowa</string>
+    <string name="design_zone_threshold">Strefa 4 · Próg</string>
+    <string name="design_zone_max">Strefa 5 · Maksimum</string>
 </resources>

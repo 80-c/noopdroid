@@ -807,6 +807,7 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                     )
                 }
                 composable(Destination.DataSources.route) { DataSourcesScreen(viewModel) }
+                composable("health_connect") { DataSourcesScreen(viewModel, focusHealthConnect = true) }
                 composable(Destination.NoopLimitations.route) { NoopLimitationsScreen() }
                 composable(Destination.BackupSync.route) { BackupSyncScreen() }
                 composable(Destination.Notifications.route) { NotificationsSettingsScreen(viewModel) }

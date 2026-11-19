@@ -74,7 +74,7 @@ class PoseStillCoverageTest {
      * The distinction this file draws is idle-vs-driven, not animated-vs-still. Anything added here needs a
      * reason of that shape.
      */
-    private val directManipulation = setOf("DashboardTools.kt", "SleepAnalysis.kt")
+    private val directManipulation = setOf("TodayScreen.kt", "SleepAnalysis.kt")
 
     private fun animatingFiles(): List<File> =
         uiDir().walkTopDown()

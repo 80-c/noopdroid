@@ -2973,4 +2973,11 @@
     <string name="tools_edit_nap">编辑小睡时间</string>
     <string name="tools_edit_nap_edited">编辑小睡时间（已修改）</string>
     <string name="tools_share_recap">分享回顾</string>
+    <string name="design_sleep_contribution">昨晚得分 %1$s</string>
+    <string name="design_zone_below">低于区间 1</string>
+    <string name="design_zone_rest">区间 1 · 静息</string>
+    <string name="design_zone_fat">区间 2 · 燃脂</string>
+    <string name="design_zone_aerobic">区间 3 · 有氧</string>
+    <string name="design_zone_threshold">区间 4 · 阈值</string>
+    <string name="design_zone_max">区间 5 · 最大强度</string>
 </resources>

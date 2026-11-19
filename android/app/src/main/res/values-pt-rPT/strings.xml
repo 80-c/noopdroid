@@ -2995,4 +2995,11 @@
     <string name="tools_edit_nap">Editar horas da sesta</string>
     <string name="tools_edit_nap_edited">Editar horas da sesta (alteradas)</string>
     <string name="tools_share_recap">Partilhar resumo</string>
+    <string name="design_sleep_contribution">Pontuação da última noite: %1$s</string>
+    <string name="design_zone_below">Abaixo da zona 1</string>
+    <string name="design_zone_rest">Zona 1 · Repouso</string>
+    <string name="design_zone_fat">Zona 2 · Queima de gordura</string>
+    <string name="design_zone_aerobic">Zona 3 · Aeróbica</string>
+    <string name="design_zone_threshold">Zona 4 · Limiar</string>
+    <string name="design_zone_max">Zona 5 · Máxima</string>
 </resources>

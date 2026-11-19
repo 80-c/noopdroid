@@ -1233,29 +1233,6 @@ private val LIQUID_HERO_RADIUS: Dp = 26.dp
 // [SourceBadge] states whether the score is WHOOP's imported figure or NOOP's on-device estimate. The
 // figures, fraction math and Rest tint are UNCHANGED from the BevelGauge this replaced — presentation-only.
 
-@Composable
-private fun RestHero(score: Double?, asleepMin: Double?, source: String, overline: String) {
-    NoopCard {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Metrics.space16),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Metrics.space4)) {
-                Text(uiString(R.string.redesign_sleep_score), style = NoopType.caption, color = Palette.textSecondary)
-                Text(score?.roundToInt()?.toString() ?: "—", style = NoopType.number(38f), color = Palette.restColor)
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Metrics.space6)) {
-                if (asleepMin != null) {
-                    Text(durationText(asleepMin), style = NoopType.title2, color = Palette.textPrimary)
-                }
-                CompactMetricBar(score?.div(100.0), Palette.restColor)
-                Text(overline, style = NoopType.caption, color = Palette.textSecondary)
-                SourceBadge(text = source, tint = Palette.restColor)
-            }
-        }
-    }
-}
 
 // MARK: - 1. HERO — stage breakdown for the navigated night
 

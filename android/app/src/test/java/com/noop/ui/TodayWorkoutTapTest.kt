@@ -25,7 +25,7 @@ class TodayWorkoutTapTest {
             ?: error("could not locate the repo root from ${userDir.absolutePath}")
     }
 
-    private fun todayScreenKt() = File(repoRoot(), "android/app/src/main/java/com/noop/ui/DashboardTools.kt").readText()
+    private fun todayScreenKt() = File(repoRoot(), "android/app/src/main/java/com/noop/ui/TodayScreen.kt").readText()
 
     /**
      * The section body, from its declaration to the start of the next top-level composable, with `//`

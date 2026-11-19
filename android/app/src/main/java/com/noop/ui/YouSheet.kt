@@ -56,7 +56,19 @@ private data class YouItem(val label:Int,val icon:Int,val route:String,val value
     val live by vm.live.collectAsStateWithLifecycle()
     val ctx=LocalContext.current
     val hcSync by vm.hcAutoSync.collectAsStateWithLifecycle()
-    val sourceCount by produceState<Int?>(null,vm,device.name){value=vm.deviceRegistry.all().size}
+    val workouts by vm.workouts.collectAsStateWithLifecycle()
+    LaunchedEffect(vm) { vm.loadWorkouts() }
+    val sourceCount by produceState<Int?>(null,vm,device.name,workouts) {
+        val sources = vm.deviceRegistry.all().map { it.id }.toMutableSet()
+        sources += vm.repo.dailyMetricDeviceIds().map { it.removeSuffix("-noop") }
+        sources += workouts.map { it.deviceId }
+        for (id in listOf("apple-health", "health-connect")) {
+            if (vm.repo.appleDailyCount(id, "0000-01-01", "9999-12-31") > 0) sources += id
+        }
+        if (vm.repo.metricSeriesKeyCount("nutrition-csv","calories_in") > 0 ||
+            vm.repo.metricSeriesKeyCount("nutrition-csv","weight") > 0) sources += "nutrition-csv"
+        value = sources.size
+    }
     val on=stringResource(R.string.design_on)
     val off=stringResource(R.string.design_off)
     val groups=listOf(
@@ -66,7 +78,7 @@ private data class YouItem(val label:Int,val icon:Int,val route:String,val value
             YouItem(R.string.design_labs,R.drawable.symbol_lab_profile,"lab_book")),
         R.string.design_insights to listOf(YouItem(R.string.design_coach,R.drawable.symbol_auto_awesome,"coach",if(NoopPrefs.coachEnabled(ctx))on else off),
             YouItem(R.string.design_effects,R.drawable.symbol_lightbulb,"insights"),YouItem(R.string.design_compare,R.drawable.symbol_compare_arrows,"compare")),
-        R.string.design_data to listOf(YouItem(R.string.design_hc,R.drawable.symbol_favorite,"data_sources",if(hcSync)on else off),
+        R.string.design_data to listOf(YouItem(R.string.design_hc,R.drawable.symbol_favorite,"health_connect",if(hcSync)on else off),
             YouItem(R.string.design_sources,R.drawable.symbol_database,"data_sources",sourceCount?.toString() ?: missing),
             YouItem(R.string.design_backup,R.drawable.symbol_cloud_sync,"backup_sync",if(BackupSyncPrefs.autoEnabled(ctx))on else off),
             YouItem(R.string.design_export,R.drawable.symbol_upload,"export")),

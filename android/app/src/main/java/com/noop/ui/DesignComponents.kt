@@ -59,7 +59,7 @@ internal fun DCard(modifier: Modifier = Modifier, padding: Int = 14, gap: Int = 
 
 @Composable
 internal fun DPage(vm: AppViewModel, title: String, overline: String?, you: () -> Unit,
-    back: (() -> Unit)? = null, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    back: (() -> Unit)? = null, modifier: Modifier = Modifier, sectionGap: Int = 12, content: @Composable ColumnScope.() -> Unit) {
     val c = designColors
     Column(modifier.fillMaxSize().background(c.surfaceBase).verticalScroll(rememberScrollState())
         .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 14.dp)) {
@@ -90,7 +90,7 @@ internal fun DPage(vm: AppViewModel, title: String, overline: String?, you: () -
             }
         }
         Spacer(Modifier.height(if (back == null) 14.dp else 12.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        Column(verticalArrangement = Arrangement.spacedBy(sectionGap.dp), content = content)
     }
 }
 

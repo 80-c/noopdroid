@@ -97,12 +97,16 @@ internal fun window(series: Map<String,Double>, end: LocalDate, days: Int) =
 
 internal fun List<Double?>.meanValue() = filterNotNull().takeIf { it.isNotEmpty() }?.average()
 
-@Composable internal fun metricUnit(metric: DesignMetric) = metric.unit?.let { stringResource(it) }.orEmpty()
+@Composable internal fun metricUnit(metric: DesignMetric) =
+    if (metric == DesignMetric.Asleep) "" else metric.unit?.let { stringResource(it) }.orEmpty()
+
+@Composable internal fun metricReading(metric: DesignMetric, value: Double?): String =
+    if (metric == DesignMetric.Asleep) sleepDurationLabel(value?.times(60)) else number(value, metric.decimals)
 
 @Composable internal fun DValue(value: String, unit: String, size: Int, unitSize: Int, color: Color = designColors.textPrimary) {
     Row(verticalAlignment=Alignment.Bottom) {
-        DText(value,size,color,true)
-        if(unit.isNotEmpty()) { Spacer(Modifier.width(3.dp)); DText(unit,unitSize,designColors.textSecondary) }
+        DText(value,size,color,true,height=if(size==64)64 else size+4)
+        if(unit.isNotEmpty()) { Spacer(Modifier.width(3.dp)); DText(unit,unitSize,designColors.textSecondary,medium=size==64) }
     }
 }
 

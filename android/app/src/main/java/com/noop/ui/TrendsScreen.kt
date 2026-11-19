@@ -75,7 +75,9 @@ internal fun TrendsScreen(vm: AppViewModel, you: () -> Unit, history: (DesignMet
                     DRow({history(metric)},60,12) {
                         Column(Modifier.weight(1f)) {
                             DText(stringResource(metric.label),17,medium=true)
-                            DText(stringResource(R.string.design_prior,signed(change,metric.decimals),rangeLabel(days)),14,
+                            val delta = if (metric == DesignMetric.Asleep && change != null)
+                                signed(change * 60) + " " + stringResource(R.string.design_unit_min) else signed(change,metric.decimals)
+                            DText(stringResource(R.string.design_prior,delta,rangeLabel(days)),14,
                                 if(change==null)c.textTertiary else if(metric.favorable(change))c.chargeColor else c.effortColor,true)
                         }
                         Canvas(Modifier.size(72.dp,28.dp)) {
@@ -85,7 +87,7 @@ internal fun TrendsScreen(vm: AppViewModel, you: () -> Unit, history: (DesignMet
                             seriesLine(current,metric.tint,min-0.1,max+0.1,2.dp.toPx())
                         }
                         Box(Modifier.width(86.dp),contentAlignment=Alignment.CenterEnd) {
-                            DValue(number(mean,metric.decimals),metricUnit(metric),20,13)
+                            DValue(metricReading(metric,mean),metricUnit(metric),20,13)
                         }
                     }
                     if(i<metrics.lastIndex)HorizontalDivider(color=c.hairline)
