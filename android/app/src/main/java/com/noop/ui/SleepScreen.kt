@@ -193,6 +193,7 @@ fun SleepScreen(
     vm: AppViewModel,
     onOpenJournal: () -> Unit = {},
     onOpenAlarms: () -> Unit = {},
+    onOpenYou: (() -> Unit)? = null,
 ) {
     val days by vm.recentDays.collectAsStateWithLifecycle()
     // Whether the ACTIVE strap is an Oura ring, off the canonical brand table (not an "oura" literal) — so
@@ -604,7 +605,8 @@ fun SleepScreen(
 
     LazyScreenScaffold(
         title = uiString(R.string.l10n_sleep_screen_sleep_3cac34e6),
-        subtitle = "Last night, read in two seconds.",
+        trailing = onOpenYou?.let { action -> @Composable { YouAvatar(action) } },
+        rowSpacing = Metrics.space12,
         listState = sleepListState,   // #sleep-layout: the hold-to-drag frame loop drives this list state
         // LIQUID SKY BACKDROP (the pilot pattern — LiquidScreenSky.kt): the static time-of-day liquid sky
         // settles into the theme canvas behind the header + hero, bled full-width up behind the status bar
@@ -1240,88 +1242,25 @@ private val LIQUID_HERO_RADIUS: Dp = 26.dp
 
 @Composable
 private fun RestHero(score: Double?, asleepMin: Double?, source: String, overline: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        SectionHeader("Sleep performance", overline = overline, trailing = "Rest")
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                // The liquid hero CARD: a translucent near-black that floats over the day-of-sky so the
-                // vessel + white count-up number stay crisp. Rounded 26 corner + a faint white hairline give
-                // the frosted-glass edge of the liquid Today heroCard (fill rgba(13,14,20,.80), stroke
-                // white@0.11). Replaces the per-hero night atmosphere (the sky now lives at screen level).
-                .clip(RoundedCornerShape(LIQUID_HERO_RADIUS))
-                .background(Palette.heroFill.copy(alpha = Palette.heroFill.alpha * CardAppearance.opacity))
-                .border(1.dp, Palette.heroBorder.copy(alpha = Palette.heroBorder.alpha * CardAppearance.opacity), RoundedCornerShape(LIQUID_HERO_RADIUS)),
+    NoopCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Metrics.space16),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(Metrics.space24),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Metrics.space14),
-            ) {
-                if (score != null) {
-                    // The sleep-performance score as a liquid VESSEL, filled to score/100 in the Rest colour
-                    // (the SAME recovery-colour scale the BevelGauge tipColor used), with the number counting
-                    // up over it. The vessel runs live (slosh + tilt) since a real value is loaded. Mirrors
-                    // the Today HeroScoreVessel.
-                    SleepHeroVessel(
-                        fraction = (score / 100.0).coerceIn(0.0, 1.0),
-                        value = score,
-                        tint = Palette.restColor,
-                        diameter = 184.dp,
-                    )
-                    Text(sleepScoreWord(score), style = NoopType.subhead, color = Palette.textSecondary)
-                } else {
-                    // No 0–100 score for the night — lead with hours slept as a big rounded headline
-                    // whose minutes tick up on appear (the same count-up the scored hero rolls). Mirrors the
-                    // macOS SleepView.restHero CountUpText fallback.
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(Metrics.space4),
-                        modifier = Modifier.padding(vertical = Metrics.space16),
-                    ) {
-                        CountUpText(
-                            value = asleepMin ?: 0.0,
-                            format = { durationText(it) },
-                            style = NoopType.number(46f),
-                            color = Palette.restBright,
-                        )
-                        Text(uiString(R.string.l10n_sleep_screen_asleep_last_night_b969b068), style = NoopType.subhead, color = Palette.textSecondary)
-                    }
+            Column(verticalArrangement = Arrangement.spacedBy(Metrics.space4)) {
+                Text(uiString(R.string.redesign_sleep_score), style = NoopType.caption, color = Palette.textSecondary)
+                Text(score?.roundToInt()?.toString() ?: "—", style = NoopType.number(38f), color = Palette.restColor)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Metrics.space6)) {
+                if (asleepMin != null) {
+                    Text(durationText(asleepMin), style = NoopType.title2, color = Palette.textPrimary)
                 }
+                CompactMetricBar(score?.div(100.0), Palette.restColor)
+                Text(overline, style = NoopType.caption, color = Palette.textSecondary)
                 SourceBadge(text = source, tint = Palette.restColor)
             }
         }
-    }
-}
-
-/**
- * The sleep-performance score as a liquid VESSEL with the value counting up over it — the liquid Sleep hero
- * element, the Today `HeroScoreVessel` idiom. A [LiquidVessel] fills to [fraction] (0..1) in [tint], sized to
- * [diameter]; over it a [CountUpText] rolls the number up to [value] (white, tabular, a soft shadow so it
- * reads on the vessel). The number is hit-transparent (clearAndSetSemantics + no clickable) so a tap falls
- * THROUGH to the vessel — LiquidVessel owns its own tap→splash+haptic. `animated = true`: a real score is
- * always loaded when this is drawn (the no-score branch shows the hours headline instead).
- */
-@Composable
-private fun SleepHeroVessel(fraction: Double, value: Double, tint: Color, diameter: Dp) {
-    Box(modifier = Modifier.size(diameter), contentAlignment = Alignment.Center) {
-        LiquidVessel(
-            value = fraction.coerceIn(0.0, 1.0),
-            tint = tint,
-            animated = true,
-            modifier = Modifier.size(diameter),
-        )
-        // Count-up number over the vessel — white, tabular, a soft shadow for legibility, hit-transparent so
-        // the tap reaches the vessel (splash). Size ≈ diameter × 0.27 (the Today 96→26 ratio), capped.
-        val numberSp = (diameter.value * 0.27f).coerceIn(20f, 52f)
-        CountUpText(
-            value = value,
-            format = { it.roundToInt().toString() },
-            style = NoopType.number(numberSp, weight = FontWeight.Bold)
-                .copy(shadow = Shadow(color = Color.Black.copy(alpha = 0.5f), offset = Offset(0f, 1f), blurRadius = 6f)),
-            color = Color.White,
-            modifier = Modifier.clearAndSetSemantics {},
-        )
     }
 }
 

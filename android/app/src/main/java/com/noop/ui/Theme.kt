@@ -452,6 +452,8 @@ object Metrics {
     val legendLineWidth = 14.dp
     val legendLineHeight = 3.dp
     val progressHeight = 10.dp
+    val navigationMaxWidth = 480.dp
+    val compactScreenPadding = 18.dp
     val editorListMaxHeight = 390.dp
 }
 

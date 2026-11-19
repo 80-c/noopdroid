@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.automirrored.filled.MenuBook
@@ -1887,7 +1888,12 @@ internal fun spo2EmptyState(
 }
 
 @Composable
-fun VitalDetailScreen(vm: AppViewModel, key: String) {
+fun VitalDetailScreen(
+    vm: AppViewModel,
+    key: String,
+    onOpenYou: (() -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
+) {
     val days by vm.recentDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val tempUnit = UnitPrefs.temperature(context)
@@ -1973,12 +1979,15 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
     val skyBehindCards = remember { NoopPrefs.skyBehindCards(context) }
     ScreenScaffold(
         title = detail?.title ?: if (isStepsDetail) uiString(R.string.l10n_health_screen_steps_cdde4f20) else "Vital Signs",
-        subtitle = when {
-            isStepsDetail -> uiString(R.string.steps_history)
-            key == "fitness_age" && loadedPoints == 0 -> "What your Fitness Age still needs."
-            loadedPoints == 1 -> "Your latest reading — trend to follow."
-            else -> "Historical trend from cached daily metrics."
+        leading = onBack?.let { action ->
+            @Composable {
+                IconButton(onClick = action) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = uiString(R.string.redesign_back), tint = Palette.textPrimary)
+                }
+            }
         },
+        trailing = onOpenYou?.let { action -> @Composable { YouAvatar(action) } },
         topBackground = screenBackdropSlot(showDayCycleBackground, skyBehindCards),
         // Sky-behind-cards needs the full-viewport container too — the band container's status-bar
         // offset left the lower cards on plain canvas (tester report).

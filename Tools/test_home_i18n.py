@@ -252,14 +252,12 @@ class HomeLocalizationTest(unittest.TestCase):
 
     def test_android_home_score_labels_and_empty_states_fit_localized_copy(self) -> None:
         source = (ROOT / "android/app/src/main/java/com/noop/ui/TodayScreen.kt").read_text(encoding="utf-8")
-        self.assertIn("text = domainLabel.uppercase()", source)
-        self.assertIn(".padding(horizontal = Metrics.space16)", source)
-        self.assertIn("minScale = 0.7f", source)
-        self.assertIn("private fun RingNoData(diameter: Dp)", source)
-        self.assertIn("maxLines = 2", source)
-        self.assertIn("overflow = TextOverflow.Clip", source)
-        self.assertNotIn("Text(domainLabel.uppercase()", source)
-        self.assertNotIn("private fun RingNoData()", source)
+        score_card = source.split("private fun TodayScoreCard(", 1)[1].split("fun CompactMetricBar", 1)[0]
+        self.assertIn("Text(label, style = NoopType.caption", score_card)
+        self.assertIn("AutoSizeValue(", score_card)
+        self.assertIn("minScale = 0.65f", score_card)
+        self.assertIn("uiString(R.string.today_no_data)", score_card)
+        self.assertIn("Text(detail, style = NoopType.footnote", score_card)
 
     def test_android_section_header_trailing_copy_does_not_squeeze_title(self) -> None:
         source = (ROOT / "android/app/src/main/java/com/noop/ui/Components.kt").read_text(encoding="utf-8")

@@ -2873,4 +2873,15 @@
     <string name="raw_diag_ecg_probe_running">Auf diesem Strap läuft möglicherweise noch eine Aufzeichnung. Das Ergebnis steht im Strap-Log.</string>
     <string name="today_customize_live_session_availability">Erscheint heute, wenn Live Sessions in den Einstellungen aktiviert sind oder eine Session aktiv ist.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Today nach Ihren Wünschen, Herzfrequenz für jede App und Italienisch</string>
+    <string name="redesign_activity">Aktivität</string>
+    <string name="redesign_you">Du</string>
+    <string name="redesign_tools">Werkzeuge</string>
+    <string name="redesign_sync_now">Jetzt synchronisieren</string>
+    <string name="redesign_activity_subtitle">Live-Daten und Trainings</string>
+    <string name="redesign_training_goal">Ziel %1$s–%2$s</string>
+    <string name="redesign_vitals">Vitalwerte</string>
+    <string name="redesign_sleep_score">Schlafwert</string>
+    <string name="redesign_back">Zurück</string>
+    <string name="redesign_live_bpm">%1$d bpm</string>
+    <string name="redesign_last_seven_days">Letzte 7 Tage</string>
 </resources>

@@ -2889,4 +2889,15 @@
     <string name="raw_diag_ecg_probe_running">A capture may still be running on this strap. The verdict goes to the strap log.</string>
     <string name="today_customize_live_session_availability">Appears today when Live Sessions is enabled in Settings or a session is active.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Today your way, heart rate any app can read, and Italian</string>
+    <string name="redesign_activity">Activity</string>
+    <string name="redesign_you">You</string>
+    <string name="redesign_tools">Tools</string>
+    <string name="redesign_sync_now">Sync now</string>
+    <string name="redesign_activity_subtitle">Live and workouts</string>
+    <string name="redesign_training_goal">Goal %1$s–%2$s</string>
+    <string name="redesign_vitals">Vitals</string>
+    <string name="redesign_sleep_score">Sleep score</string>
+    <string name="redesign_back">Back</string>
+    <string name="redesign_live_bpm">%1$d bpm</string>
+    <string name="redesign_last_seven_days">Last 7 days</string>
 </resources>

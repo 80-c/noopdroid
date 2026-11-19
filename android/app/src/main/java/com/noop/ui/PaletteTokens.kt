@@ -98,35 +98,31 @@ data class PaletteTokens(
     val heroBorder: Color,
 )
 
-// WHOOP-reset dark palette (gold killed 2026-06-22). Values match StrandPalette.swift's DARK
-// Titanium column byte-for-byte: blue-grey canvas, WHOOP red→yellow→green recovery, green Charge,
-// blue Effort, slate Rest, amber Stress. NO gold anywhere — accent/gold tokens point to WHOOP blue.
+// Android's dark interface palette. Keep metric colours distinct from navigation chrome.
 val DarkTokens = PaletteTokens(
-    surfaceBase = Color(0xFF121518), surfaceRaised = Color(0xFF25292C), surfaceOverlay = Color(0xFF1C1F26),
-    surfaceInset = Color(0xFF1F2229), hairline = Color(0xFF21304A), hairlineStrong = Color(0xFF2E3C57),
-    textPrimary = Color(0xFFF4F6F8), textSecondary = Color(0xFFC8CFD8), textTertiary = Color(0xFF8A94A4),
+    surfaceBase = Color(0xFF15131B), surfaceRaised = Color(0xFF202027), surfaceOverlay = Color(0xFF282431),
+    surfaceInset = Color(0xFF292D36), hairline = Color(0xFF383540), hairlineStrong = Color(0xFF595363),
+    textPrimary = Color(0xFFE9E3EF), textSecondary = Color(0xFFC9C1D1), textTertiary = Color(0xFFABA3B3),
     glowAmbient = Color(0xFF3A2D0A),
-    // Brand accent → mint, parity with iOS #1068 (NoopVisualStyle.mint/mintGlow). accentMuted is a dark
-    // teal muted surface (green-shifted analog of the old navy 0xFF16233A). Gold stays in the recovery world.
-    accent = Color(0xFF69DDB8), accentHover = Color(0xFF54E6BD), accentMuted = Color(0xFF163329), focusRing = Color(0xFF69DDB8),
+    accent = Color(0xFFCBB7FF), accentHover = Color(0xFFE1D5FF), accentMuted = Color(0xFF494156), focusRing = Color(0xFFCBB7FF),
     recovery000 = Color(0xFFE0463C), recovery030 = Color(0xFFE8743C), recovery055 = Color(0xFFF9DF4A),
     recovery078 = Color(0xFF8FD86A), recovery100 = Color(0xFF03E095),
     strain000 = Color(0xFF9C5A14), strain033 = Color(0xFFC2762A), strain066 = Color(0xFFD98A3D), strain100 = Color(0xFFF0A85A),
-    sleepAwake = Color(0xFFC2CCDA), sleepLight = Color(0xFF4A90E2), sleepDeep = Color(0xFF2F6FCB), sleepREM = Color(0xFF6FA8E8),
+    sleepAwake = Color(0xFFCFCCD2), sleepLight = Color(0xFF8277E3), sleepDeep = Color(0xFFF58EFA), sleepREM = Color(0xFFAD60EF),
     zone1 = Color(0xFF4A90E2), zone2 = Color(0xFF3FA9C9), zone3 = Color(0xFFE8B84B), zone4 = Color(0xFFD98A3D), zone5 = Color(0xFFE0662F),
-    statusPositive = Color(0xFF03E095), statusWarning = Color(0xFFF0A020), statusCritical = Color(0xFFE0662F),
-    metricCyan = Color(0xFF3FA9C9), metricPurple = Color(0xFF4A90E2), metricAmber = Color(0xFFD98A3D), metricRose = Color(0xFFE0662F),
-    chargeColor = Color(0xFF03E095), chargeDeep = Color(0xFF0B9D62), chargeBright = Color(0xFF6BF0B4), chargeGlow = Color(0xFF03E095),
-    effortColor = Color(0xFF4090E0), effortDeep = Color(0xFF2A6FB0), effortBright = Color(0xFF74B6F0), effortGlow = Color(0xFF4090E0),
-    restColor = Color(0xFF83A0B8), restDeep = Color(0xFF2F6FCB), restBright = Color(0xFF6FA8E8), restGlow = Color(0xFF4A90E2),
+    statusPositive = Color(0xFF73D992), statusWarning = Color(0xFFF0A020), statusCritical = Color(0xFFE0662F),
+    metricCyan = Color(0xFF3FA9C9), metricPurple = Color(0xFF4A90E2), metricAmber = Color(0xFFD98A3D), metricRose = Color(0xFFFF808C),
+    chargeColor = Color(0xFF73D992), chargeDeep = Color(0xFF349D66), chargeBright = Color(0xFF8AE4A4), chargeGlow = Color(0xFF73D992),
+    effortColor = Color(0xFFFFB873), effortDeep = Color(0xFFBE7139), effortBright = Color(0xFFFFD09B), effortGlow = Color(0xFFFFB873),
+    restColor = Color(0xFFA9C9FF), restDeep = Color(0xFF6994DE), restBright = Color(0xFFBCD5FF), restGlow = Color(0xFFA9C9FF),
     stressColor = Color(0xFFF0A020), stressDeep = Color(0xFF4A90E2), stressBright = Color(0xFFE0662F), stressGlow = Color(0xFFF0A020),
-    scenicCenter = Color(0xFF1C2128), scenicEdge = Color(0xFF121518), scenicStar = Color(0xFFC8CFD8),
-    cardFillTop = Color(0xFF15243C), cardFillBottom = Color(0xFF0B1424),
+    scenicCenter = Color(0xFF201C2B), scenicEdge = Color(0xFF15131B), scenicStar = Color(0xFFC8CFD8),
+    cardFillTop = Color(0xFF26232E), cardFillBottom = Color(0xFF202027),
     gold = Color(0xFF60A0E0), goldLight = Color(0xFF9FC8F0), goldDeep = Color(0xFF3A78C8),
     goldDeepText = Color(0xFFFFFFFF), signalYellow = Color(0xFFFFD63D),
     titaniumTop = Color(0xFFF1F3F5), titaniumMid = Color(0xFFC9CFD4), titaniumLow = Color(0xFF969DA4), titaniumDeep = Color(0xFF6B737B),
     tipCore = Color(0xFFFFFFFF),
-    heroFill = Color(0xCC0D0E14), heroBorder = Color(0x1CFFFFFF),
+    heroFill = Color(0xFF202027), heroBorder = Color(0xFF383540),
 )
 
 val LightTokens = PaletteTokens(
@@ -328,7 +324,7 @@ object AppearancePrefs {
 /** The user's CHROME accent colour (buttons/links/selection/focus). Chrome only — the recovery/strain/
  *  sleep DATA colour worlds are never themed by this. Twin of macOS `AccentColor` (StrandDesign). */
 enum class AccentColor(val storageValue: String, val label: String) {
-    MINT("mint", "Mint"),
+    MINT("mint", "Default"),
     WHOOP_BLUE("whoopBlue", "WHOOP Blue"),
     CUSTOM("custom", "Custom");
 

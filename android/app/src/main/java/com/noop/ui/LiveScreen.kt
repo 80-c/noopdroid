@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,10 +48,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -94,7 +91,14 @@ import com.noop.ble.WhoopModel
 private val LIVE_HERO_RADIUS: Dp = 26.dp
 
 @Composable
-fun LiveScreen(viewModel: AppViewModel, onManageDevices: () -> Unit = {}) {
+fun LiveScreen(
+    viewModel: AppViewModel,
+    onManageDevices: () -> Unit = {},
+    onOpenYou: (() -> Unit)? = null,
+    onOpenBreathe: (() -> Unit)? = null,
+    onOpenIntervals: (() -> Unit)? = null,
+    onOpenWorkouts: (() -> Unit)? = null,
+) {
     val live by viewModel.live.collectAsStateWithLifecycle()
     // #628: the Oura ring's live wear/charge state (null for WHOOP / before evidence). Preferred by the
     // "Worn" stat below, so removing the ring or putting it on the charger flips it instead of lingering.
@@ -217,8 +221,10 @@ fun LiveScreen(viewModel: AppViewModel, onManageDevices: () -> Unit = {}) {
     }
 
     LazyScreenScaffold(
-        title = uiString(R.string.l10n_live_screen_live_body_console_54838e06),
-        subtitle = "Current physiology, strap trust, and session controls",
+        title = uiString(R.string.redesign_activity),
+        subtitle = uiString(R.string.redesign_activity_subtitle),
+        trailing = onOpenYou?.let { action -> @Composable { YouAvatar(action) } },
+        rowSpacing = Metrics.space12,
         // LIQUID SKY BACKDROP (the pilot pattern — LiquidScreenSky.kt): the time-of-day liquid sky settles
         // behind the header + hero and the cards float over the flat canvas below. Reuses the shared
         // LiquidScreenSky() slot verbatim; when the day-cycle background is off, the scaffold paints the
@@ -228,6 +234,36 @@ fun LiveScreen(viewModel: AppViewModel, onManageDevices: () -> Unit = {}) {
         // down (Today / Trends / Sleep / metric-detail parity - same two prefs, same two behaviours).
         fullBleedBackground = screenBackdropFullBleed(showDayCycleBackground, skyBehindCards),
     ) {
+
+        // Body console — focal live HR VESSEL + live physiology (R-R thread, rolling RMSSD, frame/event).
+        item {
+        BodyConsole(live = live, bpm = bpm, activeConnection = activeConnection, zone = liveZone,
+            activeIsOura = activeIsOura, ringPhase = ringPhase)
+        }
+
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(Metrics.space8)) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = activeConnection || activeWorkout != null,
+                    onClick = {
+                        if (activeWorkout != null) showLiveWorkout = true else showSportPicker = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Palette.accent,
+                        contentColor = Palette.surfaceBase),
+                ) {
+                    Text(uiString(if (activeWorkout != null) R.string.l10n_workout_start_open_cf9b7706
+                        else R.string.l10n_live_screen_start_workout_d0f3f2cd))
+                }
+                if (onOpenBreathe != null && onOpenIntervals != null && onOpenWorkouts != null) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Metrics.space6)) {
+                        ActivityTool(R.string.nav_breathe, onOpenBreathe, Modifier.weight(1f))
+                        ActivityTool(R.string.nav_intervals, onOpenIntervals, Modifier.weight(1f))
+                        ActivityTool(R.string.nav_workouts, onOpenWorkouts, Modifier.weight(1f))
+                    }
+                }
+            }
+        }
 
         // Active band row (MW-6) — names the band the console is reading, with a "Manage devices"
         // affordance that opens the Devices screen. Additive; the connect/disconnect controls below are
@@ -352,12 +388,6 @@ fun LiveScreen(viewModel: AppViewModel, onManageDevices: () -> Unit = {}) {
         }
         }
 
-        // Body console — focal live HR VESSEL + live physiology (R-R thread, rolling RMSSD, frame/event).
-        item {
-        BodyConsole(live = live, bpm = bpm, activeConnection = activeConnection, zone = liveZone, hrMax = profile.hrMax,
-            activeIsOura = activeIsOura, ringPhase = ringPhase)
-        }
-
         // Signal Trust rail — one tile per signal that has to be current for the console to be trusted.
         item {
         SignalTrustRail(live = live, bpm = bpm, activeConnection = activeConnection,
@@ -468,20 +498,6 @@ fun LiveScreen(viewModel: AppViewModel, onManageDevices: () -> Unit = {}) {
             // Start-workout + a Refresh-battery action, gated on a live link (parity with the macOS
             // sessionActions). The Refresh button re-reads strap battery / connection on demand.
             Row(horizontalArrangement = Arrangement.spacedBy(Metrics.gap), modifier = Modifier.fillMaxWidth()) {
-                Button(
-                    onClick = { showSportPicker = true },
-                    modifier = Modifier.weight(1f),
-                    enabled = activeConnection,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Palette.accent, contentColor = Palette.surfaceBase,
-                    ),
-                ) {
-                    Text(
-                        uiString(R.string.l10n_live_screen_start_workout_d0f3f2cd), style = NoopType.captionNumber,
-                        maxLines = 1, softWrap = false, overflow = TextOverflow.Clip,
-                    )
-                }
                 OutlinedButton(
                     onClick = { viewModel.getBattery() },
                     modifier = Modifier.weight(1f),
@@ -1088,8 +1104,19 @@ private fun lastSyncLabel(live: LiveState): String =
 // MARK: - Body console (focal HR ring + live physiology)
 
 @Composable
+private fun ActivityTool(label: Int, onClick: () -> Unit, modifier: Modifier) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = Metrics.space4, vertical = Metrics.space8),
+    ) {
+        Text(uiString(label), style = NoopType.caption)
+    }
+}
+
+@Composable
 private fun BodyConsole(
-    live: LiveState, bpm: Int?, activeConnection: Boolean, zone: Int, hrMax: Int,
+    live: LiveState, bpm: Int?, activeConnection: Boolean, zone: Int,
     activeIsOura: Boolean, ringPhase: com.noop.ble.OuraLiveSource.LinkPhase,
 ) {
     // The liquid hero CARD: a translucent near-black that floats over the day-of-sky so the HR vessel + the
@@ -1105,7 +1132,7 @@ private fun BodyConsole(
             .padding(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            HeartReadout(live = live, bpm = bpm, activeConnection = activeConnection, zone = zone, hrMax = hrMax,
+            HeartReadout(live = live, bpm = bpm, activeConnection = activeConnection, zone = zone,
                 activeIsOura = activeIsOura, ringPhase = ringPhase)
             Box(
                 modifier = Modifier
@@ -1120,7 +1147,7 @@ private fun BodyConsole(
 
 @Composable
 private fun HeartReadout(
-    live: LiveState, bpm: Int?, activeConnection: Boolean, zone: Int, hrMax: Int,
+    live: LiveState, bpm: Int?, activeConnection: Boolean, zone: Int,
     activeIsOura: Boolean, ringPhase: com.noop.ble.OuraLiveSource.LinkPhase,
 ) {
     // Tint by the live HR zone when streaming, the Effort world otherwise — the workouts/live colour world
@@ -1130,57 +1157,17 @@ private fun HeartReadout(
         zone >= 1 -> Palette.hrZoneColor(zone)
         else -> Palette.effortColor
     }
-    // The vessel fill: current bpm as a fraction of the age-based max HR (the same hrMax the zone model
-    // above uses). Null bpm → empty vessel. Clamped 0..1 by LiquidVessel at the draw call.
-    val fraction = bpm?.let { (it.toDouble() / hrMax.toDouble()) } ?: 0.0
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Overline("Heart Rate")
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .aspectRatio(1f),
-            contentAlignment = Alignment.Center,
-        ) {
-            // The live HR GAUGE as a liquid VESSEL — fills to bpm/hrMax in the zone tint, sloshing live once
-            // a real HR is streaming (animated only when bpm != null, so an idle console poses static and
-            // doesn't churn an empty canvas). Mirrors the liquid Today HeroScoreVessel idiom.
-            LiquidVessel(
-                value = fraction,
-                tint = tint,
-                animated = bpm != null,
-                modifier = Modifier.fillMaxSize(),
-            )
-            // The bpm number rolled up over the vessel — white, tabular, a soft shadow for legibility, and
-            // hit-transparent (clearAndSetSemantics + no clickable) so the tap falls THROUGH to the vessel,
-            // which owns its own tap→splash+haptic. Mirrors HeroScoreVessel's count-up-over-vessel number.
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (bpm != null) {
-                    CountUpText(
-                        value = bpm.toDouble(),
-                        format = { it.roundToInt().toString() },
-                        style = NoopType.number(64f, weight = FontWeight.Bold)
-                            .copy(shadow = Shadow(color = Color.Black.copy(alpha = 0.5f), offset = Offset(0f, 1f), blurRadius = 6f)),
-                        color = Color.White,
-                        modifier = Modifier.clearAndSetSemantics {},
-                    )
-                } else {
-                    Text(
-                        text = "—",
-                        style = NoopType.number(64f, weight = FontWeight.Bold),
-                        color = Palette.textSecondary,
-                    )
-                }
-                Text("bpm", style = NoopType.subhead, color = Palette.textSecondary)
-                if (zone >= 1) {
-                    Text(uiString(R.string.l10n_live_screen_zone_zone_b8e9c0f9, zone), style = NoopType.overline, color = tint)
-                }
-            }
-        }
+        Text(
+            bpm?.let { uiString(R.string.redesign_live_bpm, it) } ?: "—",
+            style = NoopType.number(44f),
+            color = tint,
+        )
         Text(
             // A ring reads its OWN phase (#2305, #2304): `live.connected` is whichever source last wrote
             // it, and under a ring parked in the nonce handshake it read "Connected, waiting for a

@@ -1,5 +1,9 @@
 package com.noop.ui
 
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+
+import androidx.compose.foundation.clickable
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.runtime.getValue
@@ -35,10 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,7 +93,11 @@ import kotlin.math.roundToInt
 private val LIQUID_HERO_RADIUS: Dp = 26.dp
 
 @Composable
-fun TrendsScreen(vm: AppViewModel) {
+fun TrendsScreen(
+    vm: AppViewModel,
+    onOpenYou: (() -> Unit)? = null,
+    onOpenMetric: ((String) -> Unit)? = null,
+) {
     // Reactive cache (oldest → newest) as the immediate backing.
     val reactiveDays by vm.recentDays.collectAsStateWithLifecycle()
 
@@ -120,7 +124,7 @@ fun TrendsScreen(vm: AppViewModel) {
     // cards reveal it the whole way down, exactly like Today and the metric-detail screens.
     val skyBehindCards = remember { NoopPrefs.skyBehindCards(trendsCtx) }
 
-    var range by remember { mutableStateOf(TrendsRange.Quarter) }
+    var range by remember { mutableStateOf(TrendsRange.Month) }
 
     // #710 , browse previous weeks in the Week-in-review digest. 0 = the week containing today; each step
     // back is one Mon–Sun week earlier, clamped so it never runs past the earliest day we hold. The Trends
@@ -164,7 +168,9 @@ fun TrendsScreen(vm: AppViewModel) {
 
     LazyScreenScaffold(
         title = stringResource(R.string.nav_trends),
-        subtitle = stringResource(R.string.trends_subtitle),
+        subtitle = rangeSubtitle,
+        trailing = onOpenYou?.let { action -> @Composable { YouAvatar(action) } },
+        rowSpacing = Metrics.space12,
         // LIQUID SKY BACKDROP (the pilot pattern — LiquidScreenSky.kt): the time-of-day liquid sky settles
         // into the theme canvas behind the header + top rows, full-bleed via the scaffold's topBackground
         // plumbing. Static (LiquidSkyStatic, inside the helper) — never an animated sky behind a scrolling
@@ -182,36 +188,9 @@ fun TrendsScreen(vm: AppViewModel) {
         // The main card list ripples in once on appear (Reduce-Motion safe), mirroring the iOS
         // staggeredAppear sequence , each top-level section is one staggered child.
 
-        // --- Week-in-review digest (#208) with prev/next week browsing (#710). Past weeks render in the
-        // same format; the chevrons stay visible on an empty PAST week so the user can step on. ---
-        item {
-            Column(modifier = Modifier.staggeredAppear(index = 0)) {
-                WeeklyDigestNav(
-                    days = days,
-                    weekOffset = weekOffset,
-                    minWeekOffset = minWeekOffset,
-                    onStep = { delta -> weekOffset = (weekOffset + delta).coerceIn(minWeekOffset, 0) },
-                )
-            }
-        }
-
-        // --- Week in review , the Charge / Effort / Rest trio in NOOP's pip language (PipBar +
-        // CountUpText), mirroring the iOS TrendsView.weekInReview card. White count-up numbers over
-        // segmented count-up bars; self-hides when none of the three carry a window mean. ---
-        item {
-            WeekInReviewCard(
-                charge = recovery,
-                effort = strain,
-                rest = rest,
-                effortScale = effortScale,
-                modifier = Modifier.staggeredAppear(index = 1),
-            )
-        }
-
-        // --- Range control ---
+        // The range controls all of the daily trend cards below.
         item {
             Column(
-                modifier = Modifier.staggeredAppear(index = 2),
                 verticalArrangement = Arrangement.spacedBy(Metrics.space8),
             ) {
                 Row(
@@ -270,6 +249,32 @@ fun TrendsScreen(vm: AppViewModel) {
             )
         }
 
+        // --- Week-in-review digest (#208) with prev/next week browsing (#710). Past weeks render in the
+        // same format; the chevrons stay visible on an empty PAST week so the user can step on. ---
+        item {
+            Column(modifier = Modifier.staggeredAppear(index = 0)) {
+                WeeklyDigestNav(
+                    days = days,
+                    weekOffset = weekOffset,
+                    minWeekOffset = minWeekOffset,
+                    onStep = { delta -> weekOffset = (weekOffset + delta).coerceIn(minWeekOffset, 0) },
+                )
+            }
+        }
+
+        // --- Week in review , the Charge / Effort / Rest trio in NOOP's pip language (PipBar +
+        // CountUpText), mirroring the iOS TrendsView.weekInReview card. White count-up numbers over
+        // segmented count-up bars; self-hides when none of the three carry a window mean. ---
+        item {
+            WeekInReviewCard(
+                charge = recovery,
+                effort = strain,
+                rest = rest,
+                effortScale = effortScale,
+                modifier = Modifier.staggeredAppear(index = 1),
+            )
+        }
+
         // --- Small multiples , HRV / Resting HR / Effort. HRV/RHR are Charge sub-signals; the card
         // surface is neutral (EXP-004) and each line keeps its metric hue; Effort is the WHOOP blue
         // strain world. ---
@@ -285,6 +290,7 @@ fun TrendsScreen(vm: AppViewModel) {
                     color = Palette.metricPurple,
                     higherIsBetter = true,
                     resolved = hrv,
+                    onOpen = onOpenMetric?.let { open -> { open("hrv") } },
                     fmt = { "${it.roundToInt()}" },
                 )
                 MetricTrendCard(
@@ -292,6 +298,7 @@ fun TrendsScreen(vm: AppViewModel) {
                     color = Palette.metricRose,
                     higherIsBetter = false,
                     resolved = rhr,
+                    onOpen = onOpenMetric?.let { open -> { open("rhr") } },
                     fmt = { "${it.roundToInt()}" },
                 )
                 MetricTrendCard(
@@ -304,6 +311,7 @@ fun TrendsScreen(vm: AppViewModel) {
                     tipColor = Palette.effortBright,
                     higherIsBetter = null,
                     resolved = strain,
+                    onOpen = onOpenMetric?.let { open -> { open("strain") } },
                     fmt = { UnitFormatter.effortDisplay(it, effortScale) },
                 )
             }
@@ -554,9 +562,9 @@ private fun PipScoreRow(
 
 /** W(7) / M(30) / 3M(90) / 6M(180) / 1Y(365) / ALL. */
 private enum class TrendsRange(val days: Int?, val label: String, val longName: String) {
-    Week(7, "W", "week"),
-    Month(30, "M", "month"),
-    Quarter(90, "3M", "3 months"),
+    Week(7, "7D", "week"),
+    Month(30, "30D", "month"),
+    Quarter(90, "90D", "3 months"),
     Half(180, "6M", "6 months"),
     Year(365, "1Y", "year"),
     All(null, "ALL", "all history");
@@ -702,6 +710,7 @@ private fun ChartCard(
     // small-multiple card leaves this false → identical classic NoopCard + plain text readout as before.
     liquidHero: Boolean = false,
     headlineValue: Double? = null,
+    onOpen: (() -> Unit)? = null,
 ) {
     // The card body — one composable reused by both the classic and the liquid-hero container so the
     // header / chart / footer layout is byte-identical between them; only the surface + the header readout
@@ -709,7 +718,10 @@ private fun ChartCard(
     val body: @Composable () -> Unit = {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Header.
-            Row(verticalAlignment = Alignment.Top) {
+            Row(
+                modifier = if (onOpen != null) Modifier.fillMaxWidth().clickable(onClick = onOpen) else Modifier,
+                verticalAlignment = Alignment.Top,
+            ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Overline(title)
                     if (subtitle != null) {
@@ -724,6 +736,10 @@ private fun ChartCard(
                 } else if (trailing != null) {
                     // Neutral 15pt readout (matches iOS TrendsView) , not the 22sp tinted figure.
                     Text(trailing, style = NoopType.bodyNumber, color = Palette.textPrimary)
+                }
+                if (onOpen != null) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null,
+                        tint = Palette.textTertiary, modifier = Modifier.size(Metrics.iconSmall))
                 }
             }
 
@@ -1013,10 +1029,12 @@ private fun MetricTrendCard(
     tint: Color? = null,
     tipColor: Color = color,
     higherIsBetter: Boolean? = null,
+    onOpen: (() -> Unit)? = null,
 ) {
     val avg = resolved.values.averageOrNull()
     ChartCard(
         title = title,
+        onOpen = onOpen,
         subtitle = null,
         trailing = avg?.let { fmt(it) },
         color = color,
