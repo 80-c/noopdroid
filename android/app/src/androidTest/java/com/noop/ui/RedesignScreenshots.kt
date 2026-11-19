@@ -1,0 +1,68 @@
+package com.noop.ui
+
+import android.graphics.Bitmap
+import android.os.SystemClock
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.noop.data.DemoSeeder
+import com.noop.data.WhoopRepository
+import kotlinx.coroutines.runBlocking
+import org.junit.Assume.assumeTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
+
+/** Opt-in visual acceptance check. Run on a fresh, disposable 412dp emulator. */
+@RunWith(AndroidJUnit4::class)
+class RedesignScreenshots {
+    @get:Rule val compose = createEmptyComposeRule()
+
+    @Test fun captureSevenScreens() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("screenshots") == "true")
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        check(context.resources.configuration.screenWidthDp == 412)
+        runBlocking {
+            val repo = WhoopRepository.from(context)
+            check(repo.daysMerged("my-whoop").isEmpty()) { "Use a fresh emulator install" }
+            DemoSeeder.seedIfEmpty(repo)
+        }
+        NoopPrefs.of(context).edit()
+            .putBoolean(NoopPrefs.KEY_ONBOARDED, true)
+            .putString(NoopPrefs.KEY_ACCEPTED_TERMS_VERSION, Terms.CURRENT_VERSION)
+            .putString(NoopPrefs.KEY_LAST_SEEN_CHANGELOG, AppChangelog.CURRENT_VERSION).commit()
+        val photos = File(context.filesDir, "design-review").also { it.mkdirs() }
+
+        fun shot(name: String, marker: String) {
+            compose.waitUntil(30000) { compose.onAllNodesWithText(marker).fetchSemanticsNodes().isNotEmpty() }
+            compose.waitForIdle()
+            SystemClock.sleep(800)
+            val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+            File(photos, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            bitmap.recycle()
+        }
+        fun tap(label: String) {
+            compose.onAllNodesWithText(label).onLast().performClick()
+        }
+        ActivityScenario.launch(MainActivity::class.java).use {
+            shot("01-today", "Vitals vs your 30-day normal")
+            tap("Recovery")
+            shot("02-recovery", "What set today's recovery")
+            compose.onNodeWithContentDescription("Back").performClick()
+            tap("Sleep")
+            shot("03-sleep", "Through the night")
+            tap("Activity")
+            shot("04-activity", "Strain today")
+            tap("Trends")
+            shot("05-trends", "Daily scores")
+            compose.onNodeWithText("Heart rate variability").performScrollTo().performClick()
+            shot("06-metric-history", "Weekly averages")
+            compose.onNodeWithContentDescription("You: devices, tools and settings").performClick()
+            shot("07-you", "Manage devices")
+        }
+    }
+}

@@ -141,6 +141,7 @@ internal fun NightNavHeader(
     onDeleteSession: (SleepSession) -> Unit = {},
     onAddNap: (Long, Long) -> Unit = { _, _ -> },
     onPickNightDate: ((LocalDate) -> Unit)? = null,
+    editButtonOnly: Boolean = false,
 ) {
     val canGoOlder = offset < lastIndex
     val canGoNewer = offset > 0
@@ -503,6 +504,16 @@ internal fun NightNavHeader(
         )
     }
 
+    if (editButtonOnly) {
+        DAction(uiString(R.string.design_edit_sleep), session != null, Modifier.fillMaxWidth(), Icons.Filled.Edit) {
+            if (session != null) {
+                val bounds = SleepGroupEdit.groupWindow(heroGroup)
+                sleepEditDraft = SleepTimeEditDraft(bounds?.first ?: session.effectiveStartTs, bounds?.second ?: session.endTs)
+                showTimeChoice = true
+            }
+        }
+        return
+    }
     // #1311: nightLabel is now the calendar-aware label passed in (was nightRelativeLabel(offset)).
     val blockShape = RoundedCornerShape(Metrics.cornerSm)
     val clockParts = clock?.split(" · ", limit = 2)

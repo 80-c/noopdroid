@@ -84,7 +84,7 @@ class SleepStageRowOrderTest {
         assertEquals("StageBreakdownRows", expected,
                      order(breakdown, "internal fun StageBreakdownRows", """StageBreakdownRow\("(\w+)""""))
 
-        val screen = source("android/app/src/main/java/com/noop/ui/SleepScreen.kt")
+        val screen = source("android/app/src/main/java/com/noop/ui/SleepAnalysis.kt")
         val start = screen.indexOf("internal fun StageTimeline(")
         assertTrue("missing StageTimeline", start >= 0)
         val listStart = screen.indexOf("listOf(", start)

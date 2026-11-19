@@ -513,9 +513,10 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
     val backStack by nav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val current = Destination.forRoute(currentRoute)
-    val openYou: () -> Unit = {
-        nav.navigate(Destination.More.route) { launchSingleTop = true }
-    }
+    var showYou by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val openYou: () -> Unit = { showYou = true }
+    val openMetric: (DesignMetric) -> Unit = { nav.navigate("history/${it.key}") }
+    val designRoute = currentRoute in setOf(null, "today", "sleep", "live", "trends", "recovery", "history/{metric}")
     val primaryTab = backStack?.let { entry ->
         if (primaryBarTabs.any { it.dest == current }) current
         else Destination.forRoute(nav.previousBackStackEntry?.destination?.route ?: entry.destination.route)
@@ -581,7 +582,14 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
         Scaffold(
             containerColor = Palette.surfaceBase,
             bottomBar = {
-                if (!BottomBarStyleStore.overlay && current != Destination.More) {
+                if (designRoute) {
+                    val tab = when (currentRoute) {
+                        "history/{metric}" -> Destination.Trends
+                        "recovery" -> Destination.Today
+                        else -> current
+                    }
+                    DBottom(tab) { if (it.route != currentRoute) nav.navigateTopLevel(it.route) }
+                } else if (!BottomBarStyleStore.overlay && current != Destination.More) {
                     GlassBottomBar(
                         current = primaryTab,
                         onTabSelected = { dest ->
@@ -599,7 +607,8 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                 // adds this measured height to its own contentPadding instead; no shared modifier can.
                 // Slot layout: the Scaffold measured the bar into `inner`, so use it as-is.
                 // Overlay layout: the slot reserves nothing, so the bottom comes from the measured bar.
-                modifier = if (!BottomBarStyleStore.overlay) Modifier.padding(inner) else Modifier.padding(
+                modifier = if (designRoute) Modifier.padding(bottom = inner.calculateBottomPadding())
+                else if (!BottomBarStyleStore.overlay) Modifier.padding(inner) else Modifier.padding(
                     // Take the top and sides from the Scaffold, but REPLACE its bottom rather than adding
                     // to it. Scaffold's default contentWindowInsets is WindowInsets.systemBars, so
                     // `inner.bottom` already carries the navigation-bar inset — and the bar's measured
@@ -627,7 +636,17 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
             ) {
                 // --- Live, working screens (existing waves) ---
                 composable(Destination.Today.route) {
-                    TodayScreen(
+                    TodayScreen(viewModel, openYou, { nav.navigate("recovery") },
+                        { nav.navigateTopLevel("sleep") }, { nav.navigateTopLevel("live") }, openMetric)
+                }
+                composable("recovery") { RecoveryDetailScreen(viewModel, openYou) { nav.popBackStack() } }
+                composable("history/{metric}") { entry ->
+                    DesignMetric.entries.firstOrNull { it.key == entry.arguments?.getString("metric") }?.let {
+                        MetricHistoryScreen(viewModel, it, openYou) { nav.popBackStack() }
+                    }
+                }
+                composable("dashboard_tools") {
+                    DashboardTools(
                         viewModel = viewModel,
                         // The quick-action "+" lives in the Today header's top-right now (off the
                         // bottom bar) — it opens the same quick-action sheet the bar used to.
@@ -672,7 +691,10 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                     )
                 }
                 composable(Destination.Live.route) {
-                    LiveScreen(
+                    LiveScreen(viewModel, openYou) { nav.navigate(it) }
+                }
+                composable("device_console") {
+                    DeviceConsole(
                         viewModel = viewModel,
                         onOpenYou = openYou,
                         onOpenBreathe = { nav.navigate(Destination.Breathe.route) },
@@ -682,7 +704,10 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                     )
                 }
                 composable(Destination.Sleep.route) {
-                    SleepScreen(
+                    SleepScreen(viewModel, openYou)
+                }
+                composable("sleep_analysis") {
+                    SleepAnalysis(
                         vm = viewModel,
                         onOpenYou = openYou,
                         onOpenJournal = { nav.navigateTopLevel(Destination.Insights.route) },
@@ -719,6 +744,12 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                 composable(Destination.Automations.route) { AutomationsScreen(viewModel) }
                 composable(Destination.SmartAlarm.route) { SmartAlarmScreen(viewModel) }
                 composable(Destination.Workouts.route) { WorkoutsScreen(viewModel) }
+                composable("strength") { WorkoutsScreen(viewModel, lifting = true) }
+                composable("export") { SettingsScreen(viewModel, openExport = true, onExtras = { nav.navigate(it) },
+                    onOpenTestCentre = { nav.navigate(Destination.TestCentre.route) },
+                    onOpenStepsCalibration = { nav.navigate(Destination.StepsCalibration.route) },
+                    onOpenSelfHostedPush = { nav.navigate(Destination.SelfHostedPush.route) },
+                    onOpenBackupSync = { nav.navigate(Destination.BackupSync.route) }) }
                 composable(Destination.Intelligence.route) { IntelligenceScreen(viewModel) }
 
                 // --- Placeholder routes (later waves fill these in) ---
@@ -729,7 +760,10 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                     )
                 }
                 composable(Destination.Trends.route) {
-                    TrendsScreen(viewModel, onOpenYou = openYou,
+                    TrendsScreen(viewModel,openYou,openMetric)
+                }
+                composable("training_analysis") {
+                    TrainingAnalysis(viewModel, onOpenYou = openYou,
                         onOpenMetric = { key -> nav.navigate("vital_detail/$key") })
                 }
                 composable(Destination.Insights.route) { InsightsScreen(viewModel, onOpenInsightsHub = { nav.navigateTopLevel(Destination.InsightsHub.route) }) }
@@ -780,6 +814,7 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                 composable(Destination.Settings.route) {
                     SettingsScreen(
                         viewModel,
+                        onExtras = { nav.navigate(it) },
                         onOpenTestCentre = { nav.navigate(Destination.TestCentre.route) },
                         onOpenBackupSync = { nav.navigate(Destination.BackupSync.route) },
                         onOpenSelfHostedPush = { nav.navigate(Destination.SelfHostedPush.route) },
@@ -947,7 +982,11 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
         // TalkBack could focus a bar nobody can see and a tap could land on a control that is not there.
         // Dropping it at the end of the animation removes both. Safe precisely because it is an overlay —
         // it reserves no space, so composing or not composing it never reflows content.
-        if (BottomBarStyleStore.overlay && barPresent && current != Destination.More) GlassBottomBar(
+        if (showYou) YouSheet(viewModel, { showYou = false }) { route ->
+            showYou = false
+            nav.navigate(route)
+        }
+        if (!designRoute && BottomBarStyleStore.overlay && barPresent && current != Destination.More) GlassBottomBar(
             current = primaryTab,
             onTabSelected = { dest ->
                 if (dest.route != currentRoute) nav.navigateTopLevel(dest.route)
