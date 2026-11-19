@@ -2978,4 +2978,5 @@
     <string name="design_zone_aerobic">Zona 3 · Aerobica</string>
     <string name="design_zone_threshold">Zona 4 · Soglia</string>
     <string name="design_zone_max">Zona 5 · Massima</string>
+    <string name="design_days_period">%1$d giorni</string>
 </resources>

@@ -3026,4 +3026,5 @@
     <string name="design_zone_aerobic">Strefa 3 · Tlenowa</string>
     <string name="design_zone_threshold">Strefa 4 · Próg</string>
     <string name="design_zone_max">Strefa 5 · Maksimum</string>
+    <string name="design_days_period">%1$d dni</string>
 </resources>

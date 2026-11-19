@@ -77,9 +77,12 @@ internal fun TrendsScreen(vm: AppViewModel, you: () -> Unit, history: (DesignMet
                             DText(stringResource(metric.label),17,medium=true)
                             val delta = if (metric == DesignMetric.Asleep && change != null)
                                 signed(change * 60) + " " + stringResource(R.string.design_unit_min) else signed(change,metric.decimals)
-                            DText(stringResource(R.string.design_prior,delta,rangeLabel(days)),14,
+                            val unit = if(metric == DesignMetric.Asleep || change == null) "" else metricUnit(metric)
+                            val changeLabel = listOf(delta,unit).filter { it.isNotEmpty() }.joinToString(" ")
+                            DText(stringResource(R.string.design_prior,changeLabel,stringResource(R.string.design_days_period,days)),14,
                                 if(change==null)c.textTertiary else if(metric.favorable(change))c.chargeColor else c.effortColor,true)
                         }
+                        Spacer(Modifier.width(10.dp))
                         Canvas(Modifier.size(72.dp,28.dp)) {
                             val values=current.filterNotNull()
                             val min=values.minOrNull() ?: 0.0

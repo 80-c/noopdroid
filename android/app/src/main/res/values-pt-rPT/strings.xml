@@ -3002,4 +3002,5 @@
     <string name="design_zone_aerobic">Zona 3 · Aeróbica</string>
     <string name="design_zone_threshold">Zona 4 · Limiar</string>
     <string name="design_zone_max">Zona 5 · Máxima</string>
+    <string name="design_days_period">%1$d dias</string>
 </resources>

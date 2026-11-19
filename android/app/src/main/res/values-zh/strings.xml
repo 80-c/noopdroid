@@ -2980,4 +2980,5 @@
     <string name="design_zone_aerobic">区间 3 · 有氧</string>
     <string name="design_zone_threshold">区间 4 · 阈值</string>
     <string name="design_zone_max">区间 5 · 最大强度</string>
+    <string name="design_days_period">%1$d 天</string>
 </resources>

@@ -3039,4 +3039,5 @@
     <string name="design_zone_aerobic">Zone 3 · Aerobic</string>
     <string name="design_zone_threshold">Zone 4 · Threshold</string>
     <string name="design_zone_max">Zone 5 · Maximum</string>
+    <string name="design_days_period">%1$d days</string>
 </resources>

@@ -131,7 +131,7 @@ internal fun LiveScreen(vm: AppViewModel, you: () -> Unit, navigate: (String)->U
             DSection(stringResource(R.string.redesign_recent_workouts))
             if(workouts.isEmpty())DText(missing,17,modifier=Modifier.padding(vertical=14.dp))
             workouts.sortedByDescending { it.startTs }.take(5).forEach { row ->
-                DRow({detail=row},56,0) {
+                DRow({detail=row},56,0,left=0) {
                     Column(Modifier.weight(1f)) {
                         DText(row.sport,17,medium=true)
                         val date=Instant.ofEpochSecond(row.startTs).atZone(ZoneId.systemDefault()).toLocalDate()

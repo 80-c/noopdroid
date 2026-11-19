@@ -103,10 +103,10 @@ internal fun DGroup(title: String, content: @Composable ColumnScope.() -> Unit) 
 }
 
 @Composable
-internal fun DRow(onClick: () -> Unit, height: Int = 52, right: Int = 14,
+internal fun DRow(onClick: () -> Unit, height: Int = 52, right: Int = 14, left: Int = 16,
     content: @Composable RowScope.() -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = height.dp)
-        .padding(start = 16.dp, end = right.dp), verticalAlignment = Alignment.CenterVertically) {
+        .padding(start = left.dp, end = right.dp), verticalAlignment = Alignment.CenterVertically) {
         content()
         Symbol(R.drawable.symbol_chevron_right,18,designColors.textTertiary)
     }

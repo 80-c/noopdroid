@@ -2905,4 +2905,5 @@
     <string name="design_zone_aerobic">Зона 3 · Аэробная</string>
     <string name="design_zone_threshold">Зона 4 · Порог</string>
     <string name="design_zone_max">Зона 5 · Максимум</string>
+    <string name="design_days_period">%1$d дн.</string>
 </resources>

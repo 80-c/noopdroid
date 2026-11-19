@@ -119,7 +119,8 @@ internal fun MetricHistoryScreen(vm: AppViewModel, metric: DesignMetric, you: ()
             }
         }
         if(journal.isNotEmpty()) DCard {
-            DSection(stringResource(R.string.design_habits,name.lowercase(Locale.getDefault())))
+            val habitMetric = if(metric == DesignMetric.Hrv) stringResource(R.string.design_hrv_short) else name.lowercase(Locale.getDefault())
+            DSection(stringResource(R.string.design_habits,habitMetric))
             DText(stringResource(R.string.design_habit_note),14,c.textTertiary)
             val effects=remember(journal,series) {
                 fun shifted(yes:Boolean)=journal.filter { it.answeredYes==yes }.groupBy { it.question }.mapValues { (_,rows) ->
