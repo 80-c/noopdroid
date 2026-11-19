@@ -36,6 +36,7 @@ class RedesignScreenshots {
             .putString(NoopPrefs.KEY_ACCEPTED_TERMS_VERSION, Terms.CURRENT_VERSION)
             .putString(NoopPrefs.KEY_LAST_SEEN_CHANGELOG, AppChangelog.CURRENT_VERSION).commit()
         val photos = File(context.filesDir, "design-review").also { it.mkdirs() }
+        File(photos, "scrolled").mkdirs()
 
         fun shot(name: String, marker: String) {
             compose.waitUntil(30000) { compose.onAllNodesWithText(marker).fetchSemanticsNodes().isNotEmpty() }
@@ -61,10 +62,17 @@ class RedesignScreenshots {
             shot("04-activity", "Strain today")
             tap("Trends")
             shot("05-trends", "Daily scores")
+            compose.onNodeWithText("Respiration").performScrollTo()
+            shot("scrolled/05-trends-body", "Respiration")
             compose.onNodeWithText("Heart rate variability").performScrollTo().performClick()
             shot("06-metric-history", "Weekly averages")
+            compose.onNodeWithText("3 weeks ago").performScrollTo()
+            shot("scrolled/06-metric-weeks", "3 weeks ago")
+            compose.onNodeWithContentDescription("Back").performScrollTo()
             compose.onNodeWithContentDescription("You: devices, tools and settings").performClick()
             shot("07-you", "Manage devices")
+            compose.onNodeWithText("Settings").performScrollTo()
+            shot("scrolled/07-you-settings", "Settings")
         }
     }
 }

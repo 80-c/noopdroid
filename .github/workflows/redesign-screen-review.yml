@@ -48,10 +48,11 @@ jobs:
             adb shell am instrument -w -e screenshots true -e class com.noop.ui.RedesignScreenshots com.noop.whoop.debug.test/androidx.test.runner.AndroidJUnitRunner
             mkdir -p screen-review
             adb exec-out run-as com.noop.whoop.debug tar -C files/design-review -cf - . | tar xf - -C screen-review
-            test "$(find screen-review -name '*.png' | wc -l)" -eq 7
+            test "$(find screen-review -maxdepth 1 -name '*.png' | wc -l)" -eq 7
+            python3 -c "import glob,struct; assert all(struct.unpack('>II',open(p,'rb').read(24)[16:24])==(824,1830) for p in glob.glob('screen-review/*.png'))"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: seven-screens
-          path: screen-review/*.png
+          path: screen-review/
 
