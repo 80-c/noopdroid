@@ -505,7 +505,7 @@ internal fun NightNavHeader(
     }
 
     if (editButtonOnly) {
-        DAction(uiString(R.string.design_edit_sleep), session != null, Modifier.fillMaxWidth(), Icons.Filled.Edit) {
+        DAction(uiString(R.string.design_edit_sleep), session != null, Modifier.fillMaxWidth(), R.drawable.symbol_edit) {
             if (session != null) {
                 val bounds = SleepGroupEdit.groupWindow(heroGroup)
                 sleepEditDraft = SleepTimeEditDraft(bounds?.first ?: session.effectiveStartTs, bounds?.second ?: session.endTs)

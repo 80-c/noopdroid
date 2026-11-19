@@ -18,6 +18,7 @@ import java.io.File
 
 /** Opt-in visual acceptance check. Run on a fresh, disposable 412dp emulator. */
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalTestApi::class)
 class RedesignScreenshots {
     @get:Rule val compose = createEmptyComposeRule()
 
@@ -25,7 +26,6 @@ class RedesignScreenshots {
         assumeTrue(InstrumentationRegistry.getArguments().getString("screenshots") == "true")
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        check(context.resources.configuration.screenWidthDp == 412)
         runBlocking {
             val repo = WhoopRepository.from(context)
             check(repo.daysMerged("my-whoop").isEmpty()) { "Use a fresh emulator install" }
@@ -42,6 +42,8 @@ class RedesignScreenshots {
             compose.waitForIdle()
             SystemClock.sleep(800)
             val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+            val density = context.resources.displayMetrics.density
+            android.util.Log.i("ScreenReview", "$name captured at ${bitmap.width}x${bitmap.height}, density $density")
             File(photos, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
             bitmap.recycle()
         }

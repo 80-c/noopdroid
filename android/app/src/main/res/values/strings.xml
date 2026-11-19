@@ -3015,4 +3015,21 @@
     <string name="design_device_stats">%1$s · %2$s%%</string>
     <string name="design_confidence">Enough data for a reliable score</string>
     <string name="design_yesterday">Yesterday</string>
+    <string name="tools_sync_chunks">Syncing your strap history… %1$d chunks pulled</string>
+    <string name="tools_sync_history">Syncing your strap history…</string>
+    <string name="tools_rescan">Re-scan</string>
+    <string name="tools_connect">Connect</string>
+    <string name="tools_syncing">Syncing…</string>
+    <string name="tools_buzz_on">Your strap vibrates when you reach Zone 5 (≥ %1$d bpm). Manage this under Automations → Haptic coaching.</string>
+    <string name="tools_buzz_off">Turn on HR-zone coaching in Automations for a wrist buzz when you reach Zone 5 (≥ %1$d bpm).</string>
+    <string name="tools_scan_connect">Scan and connect</string>
+    <string name="tools_wait_rr">Waiting for R-R intervals.</string>
+    <string name="tools_recent_rr">Recent intervals: %1$s ms</string>
+    <string name="tools_sleep_deleted">Sleep deleted.</string>
+    <string name="tools_sleep_tombstone">Sleep deleted. NOOP will skip sleep detection between %1$s and %2$s.</string>
+    <string name="tools_raw_stages">Raw on-device stages</string>
+    <string name="tools_raw_stage_note">These are the stages the ring classified and sent over Bluetooth. The Oura app adjusts them, so the same night can show more Awake and less Deep or REM here.</string>
+    <string name="tools_edit_nap">Edit nap times</string>
+    <string name="tools_edit_nap_edited">Edit nap times (edited)</string>
+    <string name="tools_share_recap">Share recap</string>
 </resources>

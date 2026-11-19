@@ -2051,12 +2051,6 @@ fun DashboardTools(
 }
 
 /**
- * The accent quick-action "+" in the Today header's top-right. Moved off the bottom bar (now four clean
- * tabs) to balance the header and open the existing quick-action sheet. A small CONTAINED accent disc,  * the accented primary among an otherwise-neutral icon set, ~36dp, no float and no glow: a flat reset-blue
- * accent fill with a hairline rim, the "+" glyph in crisp white. Mirrors the iOS quick-action + (a glyph on
- * Circle().fill(StrandPalette.accent)).
- */
-/**
  * Today "workout in progress" indicator (iOS parity: ActiveWorkoutIndicatorCard). A metricRose-tinted card
  * with a decorative live dot + "WORKOUT IN PROGRESS" overline, a live H:MM:SS clock, the sport label, and a
  * "Return to workout" button. The whole card is tappable; [onReturn] routes to Live and re-opens the
@@ -2849,13 +2843,20 @@ private fun TodayScoreCard(
         verticalArrangement = Arrangement.spacedBy(Metrics.space6),
     ) {
         Text(label, style = NoopType.caption, color = Palette.textSecondary)
-        AutoSizeValue(
-            text = value ?: "—",
-            style = NoopType.number(32f, weight = FontWeight.Bold),
-            color = if (value != null) tint else Palette.textTertiary,
-            minScale = 0.65f,
-        )
-        CompactMetricBar(fraction, tint)
+        val diameter = 76.dp
+        val context = LocalContext.current
+        Box(Modifier.size(diameter),contentAlignment = Alignment.Center) {
+            if (NoopPrefs.todayRingGauges(context)) {
+                GlowRing(fraction = (fraction ?: 0.0).toFloat(), value = value?.toDoubleOrNull() ?: 0.0,
+                    color = tint, diameter = diameter, lineWidth = diameter * 0.1f, showsLabel = false)
+            } else
+                LiquidVessel(value = fraction ?: 0.0, tint = tint, animated = fraction != null,
+                    modifier = Modifier.size(diameter), onTap = onClick)
+            val numberSp = (diameter.value * 0.27f).coerceIn(20f, 30f)
+            Text(value ?: "–", style = NoopType.number(numberSp,
+                weight = if (AppearancePrefs.gaugeNumerals == GaugeNumeralStyle.SOFT) FontWeight.SemiBold else FontWeight.Bold),
+                color = Palette.textPrimary)
+        }
         val detail = caption ?: if (value == null) uiString(R.string.today_no_data) else null
         if (detail != null) {
             Text(detail, style = NoopType.footnote, color = Palette.textSecondary)

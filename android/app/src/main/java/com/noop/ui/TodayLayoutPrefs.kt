@@ -45,7 +45,7 @@ enum class TodaySection(val raw: String, @StringRes val titleRes: Int) {
         /** The original, hard-coded section order — the default when the layout isn't customised. The
          *  journal widget (#656) is last by default, where it was first added, above the data-sources card. */
         val defaultOrder: List<TodaySection> = listOf(
-            HERO, SYNTHESIS, RECOVERY_VITALS, LIVE_SESSION, KEY_METRICS, WORKOUTS, HEART_RATE, YOUR_CARDS,
+            HERO, LIVE_SESSION, SYNTHESIS, KEY_METRICS, WORKOUTS, HEART_RATE, RECOVERY_VITALS, YOUR_CARDS,
             MENSTRUAL_CYCLE, JOURNAL, ADDED_CARDS,
         )
     }

@@ -53,6 +53,27 @@ internal enum class DesignMetric(val key: String, val label: Int, val unit: Int?
 internal val vitals = listOf(DesignMetric.Hrv, DesignMetric.Rhr, DesignMetric.Resp, DesignMetric.Temp, DesignMetric.Oxygen)
 
 @Composable
+internal fun dailyEffort(vm: AppViewModel, day: com.noop.data.DailyMetric?): Double? {
+    val context = LocalContext.current
+    val cycle by vm.activeDayCycle.collectAsStateWithLifecycle()
+    val strap by vm.activeStrapIdFlow.collectAsStateWithLifecycle()
+    val lastSync by vm.lastHistorySyncAt.collectAsStateWithLifecycle()
+    val date = LocalDate.now()
+    val start = activeDayCycleStart(NoopPrefs.dayCycleMode(context), cycle?.onsetTs,
+        date.atStartOfDay(java.time.ZoneId.systemDefault()).toEpochSecond())
+    return produceState(day?.strain, listOf(day, strap, start, lastSync)) {
+        val profile = ProfileStore.from(context)
+        val samples = vm.repo.hrSamplesUnion(vm.activeStrapId, start, System.currentTimeMillis() / 1000)
+        val live = if (samples.isEmpty()) null else com.noop.analytics.StrainScorer.strain(
+            hr = samples, maxHR = profile.hrMaxOverride.takeIf { it > 0 }?.toDouble()
+                ?: com.noop.analytics.StrainScorer.tanakaHRmax(profile.age.toDouble()),
+            restingHR = day?.restingHr?.toDouble() ?: com.noop.analytics.StrainScorer.defaultRestingHR,
+            method = NoopPrefs.effortMethod(context), sex = profile.sex)
+        value = com.noop.analytics.StrainScorer.effectiveEffort(live, day?.strain)
+    }.value
+}
+
+@Composable
 internal fun metricData(vm: AppViewModel, metrics: List<DesignMetric>, end: LocalDate, length: Int):
     Map<DesignMetric,Map<String,Double>> {
     val recent by vm.recentDays.collectAsStateWithLifecycle()

@@ -30,12 +30,19 @@ jobs:
         with:
           api-level: 30
           arch: x86_64
+          profile: pixel_2
           target: default
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
             adb shell wm density 320
             adb shell wm size 824x1830
+            adb shell settings put system accelerometer_rotation 0
+            adb shell settings put system user_rotation 0
+            adb shell cmd uimode night yes
+            adb shell wm size
+            adb shell wm density
+            adb shell am get-config
             adb install -g android/app/build/outputs/apk/full/debug/app-full-debug.apk
             adb install -g android/app/build/outputs/apk/androidTest/full/debug/app-full-debug-androidTest.apk
             adb shell am instrument -w -e screenshots true -e class com.noop.ui.RedesignScreenshots com.noop.whoop.debug.test/androidx.test.runner.AndroidJUnitRunner

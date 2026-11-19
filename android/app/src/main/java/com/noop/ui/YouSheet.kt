@@ -47,7 +47,7 @@ internal data class DesignDevice(val name:String,val connected:Boolean,val batte
 @Composable internal fun syncLabel(ts:Long?)=stringResource(R.string.design_synced,
     ts?.let { ((System.currentTimeMillis()/1000-it).coerceAtLeast(0)/60).toString() } ?: missing)
 
-private data class YouItem(val label:Int,val icon:ImageVector,val route:String,val value:String?=null)
+private data class YouItem(val label:Int,val icon:Int,val route:String,val value:String?=null)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable internal fun YouSheet(vm:AppViewModel, close:()->Unit, navigate:(String)->Unit) {
@@ -60,18 +60,18 @@ private data class YouItem(val label:Int,val icon:ImageVector,val route:String,v
     val on=stringResource(R.string.design_on)
     val off=stringResource(R.string.design_off)
     val groups=listOf(
-        R.string.design_tools to listOf(YouItem(R.string.nav_breathe,Icons.Outlined.Air,"breathe"),
-            YouItem(R.string.design_timer,Icons.Outlined.Timer,"intervals"),YouItem(R.string.design_log,Icons.Outlined.FitnessCenter,"strength"),
-            YouItem(R.string.design_stress,Icons.Outlined.Bolt,"stress"),YouItem(R.string.design_rhythm,Icons.Outlined.MonitorHeart,"rhythm"),
-            YouItem(R.string.design_labs,Icons.Outlined.Science,"lab_book")),
-        R.string.design_insights to listOf(YouItem(R.string.design_coach,Icons.Outlined.AutoAwesome,"coach",if(NoopPrefs.coachEnabled(ctx))on else off),
-            YouItem(R.string.design_effects,Icons.Outlined.Lightbulb,"insights"),YouItem(R.string.design_compare,Icons.Outlined.CompareArrows,"compare")),
-        R.string.design_data to listOf(YouItem(R.string.design_hc,Icons.Outlined.FavoriteBorder,"data_sources",if(hcSync)on else off),
-            YouItem(R.string.design_sources,Icons.Outlined.Storage,"data_sources",sourceCount?.toString() ?: missing),
-            YouItem(R.string.design_backup,Icons.Outlined.CloudSync,"backup_sync",if(BackupSyncPrefs.autoEnabled(ctx))on else off),
-            YouItem(R.string.design_export,Icons.Outlined.Upload,"export")),
-        R.string.design_app to listOf(YouItem(R.string.nav_alarms,Icons.Outlined.Alarm,"smart_alarm"),
-            YouItem(R.string.nav_notifications,Icons.Outlined.Notifications,"notifications"),YouItem(R.string.nav_settings,Icons.Outlined.Settings,"settings")))
+        R.string.design_tools to listOf(YouItem(R.string.nav_breathe,R.drawable.symbol_air,"breathe"),
+            YouItem(R.string.design_timer,R.drawable.symbol_timer,"intervals"),YouItem(R.string.design_log,R.drawable.symbol_fitness_center,"strength"),
+            YouItem(R.string.design_stress,R.drawable.symbol_bolt,"stress"),YouItem(R.string.design_rhythm,R.drawable.symbol_ecg_heart,"rhythm"),
+            YouItem(R.string.design_labs,R.drawable.symbol_lab_profile,"lab_book")),
+        R.string.design_insights to listOf(YouItem(R.string.design_coach,R.drawable.symbol_auto_awesome,"coach",if(NoopPrefs.coachEnabled(ctx))on else off),
+            YouItem(R.string.design_effects,R.drawable.symbol_lightbulb,"insights"),YouItem(R.string.design_compare,R.drawable.symbol_compare_arrows,"compare")),
+        R.string.design_data to listOf(YouItem(R.string.design_hc,R.drawable.symbol_favorite,"data_sources",if(hcSync)on else off),
+            YouItem(R.string.design_sources,R.drawable.symbol_database,"data_sources",sourceCount?.toString() ?: missing),
+            YouItem(R.string.design_backup,R.drawable.symbol_cloud_sync,"backup_sync",if(BackupSyncPrefs.autoEnabled(ctx))on else off),
+            YouItem(R.string.design_export,R.drawable.symbol_upload,"export")),
+        R.string.design_app to listOf(YouItem(R.string.nav_alarms,R.drawable.symbol_alarm,"smart_alarm"),
+            YouItem(R.string.nav_notifications,R.drawable.symbol_notifications,"notifications"),YouItem(R.string.nav_settings,R.drawable.symbol_settings,"settings")))
     ModalBottomSheet(onDismissRequest=close,sheetState=rememberModalBottomSheetState(skipPartiallyExpanded=true),
         containerColor=c.surfaceBase,dragHandle=null) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=20.dp).padding(top=20.dp,bottom=32.dp),
@@ -85,7 +85,7 @@ private data class YouItem(val label:Int,val icon:ImageVector,val route:String,v
             DText(stringResource(R.string.redesign_you),32,medium=true)
             DCard(padding=16,gap=12) {
                 Row(horizontalArrangement=Arrangement.spacedBy(12.dp),verticalAlignment=Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Watch,null,Modifier.size(28.dp),if(device.connected)c.chargeColor else c.textTertiary)
+                    Symbol(R.drawable.symbol_watch,28,if(device.connected)c.chargeColor else c.textTertiary)
                     Column {
                         DText(device.name,18,medium=true)
                         DText(listOf(stringResource(if(device.connected)R.string.design_link else R.string.design_offline),
@@ -103,7 +103,7 @@ private data class YouItem(val label:Int,val icon:ImageVector,val route:String,v
                     DCard(padding=0) {
                         items.forEachIndexed { i,item ->
                             DRow({navigate(item.route)}) {
-                                Icon(item.icon,null,Modifier.size(22.dp),c.textSecondary)
+                                Symbol(item.icon,22,c.textSecondary)
                                 Spacer(Modifier.width(12.dp));DText(stringResource(item.label),17,modifier=Modifier.weight(1f))
                                 item.value?.let { DText(it,15,c.textSecondary) }
                             }

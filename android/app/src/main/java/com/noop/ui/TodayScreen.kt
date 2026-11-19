@@ -35,6 +35,7 @@ internal fun TodayScreen(vm: AppViewModel, you: () -> Unit, recovery: () -> Unit
     val today = LocalDate.now()
     val days by vm.recentDays.collectAsStateWithLifecycle()
     val current = days.lastOrNull { it.day == today.toString() }
+    val effort = dailyEffort(vm,current)
     val data = metricData(vm, DesignMetric.entries, today,31)
     val goal = optimalFractionRange(current?.recovery)
     val live by vm.live.collectAsStateWithLifecycle()
@@ -43,7 +44,7 @@ internal fun TodayScreen(vm: AppViewModel, you: () -> Unit, recovery: () -> Unit
     DPage(vm,stringResource(R.string.nav_today),dateLabel(today,"EEE, MMM d"),you) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
             listOf(DesignMetric.Recovery,DesignMetric.Strain,DesignMetric.Sleep).forEach { metric ->
-                val value = data[metric]?.get(today.toString())
+                val value = if (metric==DesignMetric.Strain) effort else data[metric]?.get(today.toString())
                 val caption = when(metric) {
                     DesignMetric.Recovery -> when { value == null -> missing
                         value >= 67 -> stringResource(R.string.design_ready_train)
@@ -66,7 +67,7 @@ internal fun TodayScreen(vm: AppViewModel, you: () -> Unit, recovery: () -> Unit
             }
         }
         DCard { Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-            Icon(Icons.Outlined.AutoAwesome,null,Modifier.size(20.dp),c.chargeColor)
+            Symbol(R.drawable.symbol_auto_awesome,20,c.chargeColor)
             DText(synthesisDetail(current),17,height=23)
         } }
         DGroup(stringResource(R.string.design_vitals)) {
@@ -80,7 +81,7 @@ internal fun TodayScreen(vm: AppViewModel, you: () -> Unit, recovery: () -> Unit
                     DValue(if(metric==DesignMetric.Temp)signed(value,1) else number(value,metric.decimals),metricUnit(metric),20,14)
                     Row(Modifier.width(92.dp).padding(end=6.dp),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
                         val color=if(delta==null)c.textTertiary else if(metric.favorable(delta,baseline,value))c.chargeColor else c.effortColor
-                        if(delta!=null) Icon(if(delta<0)Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward,null,Modifier.size(14.dp),color)
+                        if(delta!=null) Symbol(if(delta<0)R.drawable.symbol_arrow_downward else R.drawable.symbol_arrow_upward,14,color)
                         DText(signed(delta,metric.decimals),14,color,true)
                     }
                 }
@@ -90,7 +91,7 @@ internal fun TodayScreen(vm: AppViewModel, you: () -> Unit, recovery: () -> Unit
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.surfaceRaised)
             .clickable(onClick=activity).heightIn(min=64.dp).padding(horizontal=14.dp,vertical=12.dp),
             verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Outlined.FavoriteBorder,null,Modifier.size(24.dp),c.metricRose)
+            Symbol(R.drawable.symbol_favorite,24,c.metricRose)
             Column(Modifier.weight(1f)) {
                 DText(stringResource(R.string.design_heart_now),13,c.textSecondary,true)
                 DValue(number(bpm?.toDouble()),stringResource(R.string.design_unit_bpm),22,14)

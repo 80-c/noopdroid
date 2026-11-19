@@ -34,6 +34,11 @@ internal val designColors get() = if (Palette.isLight) LightTokens else DarkToke
 internal const val missing = "–"
 
 @Composable
+internal fun Symbol(id: Int, size: Int, color: Color, description: String? = null) {
+    Icon(androidx.compose.ui.res.painterResource(id), description, Modifier.size(size.dp), color)
+}
+
+@Composable
 internal fun DText(text: String, size: Int, color: Color = designColors.textPrimary,
     medium: Boolean = false, modifier: Modifier = Modifier, height: Int = size + 4,
     spacing: Double = 0.0, bold: Boolean = false) {
@@ -59,7 +64,7 @@ internal fun DPage(vm: AppViewModel, title: String, overline: String?, you: () -
     Column(modifier.fillMaxSize().background(c.surfaceBase).verticalScroll(rememberScrollState())
         .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 14.dp)) {
         if (back != null) IconButton(onClick = back, modifier = Modifier.offset(x = (-12).dp).size(48.dp)) {
-            Icon(Icons.Rounded.ArrowBack, stringResource(R.string.redesign_back), tint = c.textPrimary)
+            Symbol(R.drawable.symbol_arrow_back,24,c.textPrimary,stringResource(R.string.redesign_back))
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
@@ -103,7 +108,7 @@ internal fun DRow(onClick: () -> Unit, height: Int = 52, right: Int = 14,
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = height.dp)
         .padding(start = 16.dp, end = right.dp), verticalAlignment = Alignment.CenterVertically) {
         content()
-        Icon(Icons.Rounded.ChevronRight, null, Modifier.size(18.dp), tint = designColors.textTertiary)
+        Symbol(R.drawable.symbol_chevron_right,18,designColors.textTertiary)
     }
 }
 
@@ -130,7 +135,7 @@ internal fun DRange(selected: Int, onSelect: (Int) -> Unit) {
                 Row(Modifier.weight(1f).fillMaxHeight().clickable { onSelect(days) }.padding(vertical=4.dp)
                     .background(if(active)c.secondaryContainer else Color.Transparent,shape)
                     .border(1.dp,c.hairlineStrong,shape), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    if(active) Icon(Icons.Rounded.Check,null,Modifier.size(18.dp),c.onPrimaryContainer)
+                    if(active) Symbol(R.drawable.symbol_check,18,c.onPrimaryContainer)
                     DText(rangeLabel(days),14,if(active)c.onPrimaryContainer else c.textSecondary,true)
                 }
             }
@@ -154,15 +159,15 @@ internal fun DBottom(current: Destination, select: (Destination) -> Unit) {
         primaryBarTabs.forEach { tab ->
             val active = tab.dest == current
             val icon = when(tab.dest) {
-                Destination.Today -> if(active) Icons.Rounded.Today else Icons.Outlined.Today
-                Destination.Sleep -> if(active) Icons.Rounded.Bedtime else Icons.Outlined.Bedtime
-                Destination.Live -> if(active) Icons.Rounded.DirectionsRun else Icons.Outlined.DirectionsRun
-                else -> if(active) Icons.Rounded.Insights else Icons.Outlined.Insights
+                Destination.Today -> if(active) R.drawable.symbol_today_filled else R.drawable.symbol_today
+                Destination.Sleep -> if(active) R.drawable.symbol_bedtime_filled else R.drawable.symbol_bedtime
+                Destination.Live -> if(active) R.drawable.symbol_directions_run_filled else R.drawable.symbol_directions_run
+                else -> if(active) R.drawable.symbol_insights_filled else R.drawable.symbol_insights
             }
             Column(Modifier.weight(1f).fillMaxHeight().clickable { select(tab.dest) }.padding(top=12.dp),
                 horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.spacedBy(4.dp)) {
                 Box(Modifier.size(64.dp,32.dp).background(if(active)c.secondaryContainer else Color.Transparent,CircleShape),
-                    contentAlignment=Alignment.Center) { Icon(icon,null,tint=if(active)c.onPrimaryContainer else c.textSecondary) }
+                    contentAlignment=Alignment.Center) { Symbol(icon,24,if(active)c.onPrimaryContainer else c.textSecondary) }
                 DText(stringResource(tab.labelRes),12,if(active)c.textPrimary else c.textSecondary,true,spacing=0.5,bold=active)
             }
         }
@@ -186,10 +191,10 @@ internal fun dateLabel(day: LocalDate, pattern: String) =
 
 @Composable
 internal fun DAction(label: String, enabled: Boolean = true, modifier: Modifier = Modifier,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null, click: () -> Unit) {
+    icon: Int? = null, click: () -> Unit) {
     OutlinedButton(onClick=click,enabled=enabled,modifier=modifier.heightIn(min=48.dp),
         border=BorderStroke(1.dp,designColors.hairlineStrong),contentPadding=PaddingValues(horizontal=8.dp)) {
-        if(icon != null) { Icon(icon,null,Modifier.size(20.dp),designColors.accent); Spacer(Modifier.width(8.dp)) }
+        if(icon != null) { Symbol(icon,20,designColors.accent); Spacer(Modifier.width(8.dp)) }
         DText(label,15,designColors.accent,true)
     }
 }
