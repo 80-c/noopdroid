@@ -1,0 +1,5 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="960" android:viewportHeight="960">
+  <group android:translateY="-96">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M504 576 348 420Q337 409 337 392Q337 375 348 364Q359 353 376 353Q393 353 404 364L588 548Q594 554 596.5 561Q599 568 599 576Q599 584 596.5 591Q594 598 588 604L404 788Q393 799 376 799Q359 799 348 788Q337 777 337 760Q337 743 348 732Z" />
+  </group>
+</vector>

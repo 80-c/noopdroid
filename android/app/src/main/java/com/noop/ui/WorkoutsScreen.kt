@@ -159,7 +159,7 @@ import kotlin.math.roundToInt
  * an empty window auto-widens to the next larger range, exactly like the macOS screen.
  */
 @Composable
-fun WorkoutsScreen(vm: AppViewModel) {
+fun WorkoutsScreen(vm: AppViewModel, lifting: Boolean = false) {
     // The ViewModel owns the loaded rows now (ALL sources incl. detected, dismissed-filtered) so a
     // mutation (add / edit / relabel / dismiss / delete) republishes the list and the screen updates.
     val allRows by vm.workouts.collectAsState()
@@ -177,7 +177,7 @@ fun WorkoutsScreen(vm: AppViewModel) {
     // #64: filters beyond the time range — sport (null = all), source class (null = all), free-text
     // search over the displayed sport. The pure WorkoutFilter applies them AFTER the window cut.
     var sportFilter by remember { mutableStateOf<String?>(null) }
-    var sourceFilter by remember { mutableStateOf<WorkoutSource?>(null) }
+    var sourceFilter by remember(lifting) { mutableStateOf(if (lifting) WorkoutSource.LIFTING else null) }
     var searchText by remember { mutableStateOf("") }
     val filter = WorkoutFilter(sportFilter, sourceFilter, searchText)
 

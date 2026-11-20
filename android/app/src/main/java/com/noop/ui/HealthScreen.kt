@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.automirrored.filled.MenuBook
@@ -34,7 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -135,9 +135,9 @@ fun HealthScreen(
     // Health Monitor shows live HR too, so it must keep the realtime stream on while it's visible —
     // otherwise leaving the Live page stopped the stream and this page froze (issue #18). Ref-counted
     // in the ViewModel, so handing off between Live and here never drops the stream.
-    DisposableEffect(Unit) {
+    androidx.lifecycle.compose.LifecycleStartEffect(vm) {
         vm.requestRealtimeHr()
-        onDispose { vm.releaseRealtimeHr() }
+        onStopOrDispose { vm.releaseRealtimeHr() }
     }
 
     // PERF (#scroll-jank): the BLE live state + smoothed bpm tick ~1Hz. Reading them in this body to
@@ -1887,7 +1887,12 @@ internal fun spo2EmptyState(
 }
 
 @Composable
-fun VitalDetailScreen(vm: AppViewModel, key: String) {
+fun VitalDetailScreen(
+    vm: AppViewModel,
+    key: String,
+    onOpenYou: (() -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
+) {
     val days by vm.recentDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val tempUnit = UnitPrefs.temperature(context)
@@ -1973,12 +1978,15 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
     val skyBehindCards = remember { NoopPrefs.skyBehindCards(context) }
     ScreenScaffold(
         title = detail?.title ?: if (isStepsDetail) uiString(R.string.l10n_health_screen_steps_cdde4f20) else "Vital Signs",
-        subtitle = when {
-            isStepsDetail -> uiString(R.string.steps_history)
-            key == "fitness_age" && loadedPoints == 0 -> "What your Fitness Age still needs."
-            loadedPoints == 1 -> "Your latest reading — trend to follow."
-            else -> "Historical trend from cached daily metrics."
+        leading = onBack?.let { action ->
+            @Composable {
+                IconButton(onClick = action) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = uiString(R.string.redesign_back), tint = Palette.textPrimary)
+                }
+            }
         },
+        trailing = onOpenYou?.let { action -> @Composable { YouAvatar(action) } },
         topBackground = screenBackdropSlot(showDayCycleBackground, skyBehindCards),
         // Sky-behind-cards needs the full-viewport container too — the band container's status-bar
         // offset left the lower cards on plain canvas (tester report).

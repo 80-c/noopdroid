@@ -535,6 +535,8 @@ fun SettingsScreen(
     onOpenBackupSync: () -> Unit = {},
     onOpenSelfHostedPush: () -> Unit = {},
     onOpenStepsCalibration: () -> Unit = {},
+    onExtras: ((String) -> Unit)? = null,
+    openExport: Boolean = false,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -854,6 +856,13 @@ fun SettingsScreen(
         }
     }
 
+    var exportOpened by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(openExport) {
+        if (openExport && !exportOpened) {
+            exportOpened = true
+            csvExportLauncher.launch("noop-export-${java.time.LocalDate.now()}.zip")
+        }
+    }
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -931,6 +940,17 @@ fun SettingsScreen(
         // Read the revision counter so every profile write recomposes this subtree
         // (SharedPreferences is not observable; `mutate` bumps `rev` after each write).
         @Suppress("UNUSED_VARIABLE") val tick = rev
+        if (onExtras != null) DGroup(stringResource(R.string.design_other)) {
+            val items = listOf(
+                R.string.design_extra_today to "dashboard_tools", R.string.design_extra_sleep to "sleep_analysis",
+                R.string.design_extra_live to "device_console", R.string.design_extra_trends to "training_analysis",
+            ) + drawerGroups.flatMap { it.items }.distinct()
+                .filter { it != Destination.Settings }.map { it.titleRes to it.route }
+            items.forEachIndexed { i, (label, route) ->
+                DRow({ onExtras(route) }) { DText(stringResource(label), 17, modifier = Modifier.weight(1f)) }
+                if (i < items.lastIndex) androidx.compose.material3.HorizontalDivider(color = designColors.hairline)
+            }
+        }
 
         // --- Profile photo (optional, on-device) ---
         // Split into its own section ahead of the body-numbers Profile card, mirroring the iOS

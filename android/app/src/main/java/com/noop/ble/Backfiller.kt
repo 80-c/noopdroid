@@ -792,6 +792,10 @@ class Backfiller(
         // session (loggedNoCursor) and the ack still proceeds below.
         if (trim == 0xFFFFFFFFL && !loggedNoCursor) {
             loggedNoCursor = true
+            if (sessionRowsPersisted == 0 && !continuedAfterRows) {
+                // The END carries the device clock independently of any GET_DATA_RANGE response.
+                log("Backfill: empty history END deviceSeconds=$unix, payloadFrames=${frames.size}, endBytes=${endFrame.size}")
+            }
             log(noCursorLine(sessionRowsPersisted, continuedAfterRows))
             // Connection test mode: the no-cursor sentinel as a compact tagged line (gated zero-cost).
             emitConnection { com.noop.analytics.ConnectionTrace.noCursorLine() }

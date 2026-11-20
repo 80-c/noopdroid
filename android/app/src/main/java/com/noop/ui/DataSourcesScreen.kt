@@ -109,7 +109,7 @@ import kotlinx.coroutines.withContext
  *                     wired to ActivityResult document launchers.
  */
 @Composable
-fun DataSourcesScreen(vm: AppViewModel) {
+fun DataSourcesScreen(vm: AppViewModel, focusHealthConnect: Boolean = false) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val live by vm.live.collectAsStateWithLifecycle()
@@ -419,6 +419,7 @@ fun DataSourcesScreen(vm: AppViewModel) {
     // cards now compose + get accessibility-walked on scroll — this list of 11 source cards is long. The
     // confirm dialogs below the scaffold are untouched.
     LazyScreenScaffold(
+        listState = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = if (focusHealthConnect) 3 else 0),
         title = uiString(R.string.l10n_data_sources_screen_data_sources_5e43d6bb),
         subtitle = "Everything stays on this phone. Bring your history in once, then it's yours.",
     ) {

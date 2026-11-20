@@ -96,61 +96,64 @@ data class PaletteTokens(
     // + heroLabel flip with it so the edge stays subtle and the source-badge text stays readable in both.
     val heroFill: Color,
     val heroBorder: Color,
+    val primaryContainer: Color = accentMuted,
+    val onPrimaryContainer: Color = textPrimary,
+    val secondaryContainer: Color = accentMuted,
+    val recoveryMid: Color = recovery055,
+    val strainGoalBand: Color = effortColor.copy(alpha = 0.25f),
 )
 
-// WHOOP-reset dark palette (gold killed 2026-06-22). Values match StrandPalette.swift's DARK
-// Titanium column byte-for-byte: blue-grey canvas, WHOOP red→yellow→green recovery, green Charge,
-// blue Effort, slate Rest, amber Stress. NO gold anywhere — accent/gold tokens point to WHOOP blue.
+// Android's dark interface palette. Keep metric colours distinct from navigation chrome.
 val DarkTokens = PaletteTokens(
-    surfaceBase = Color(0xFF121518), surfaceRaised = Color(0xFF25292C), surfaceOverlay = Color(0xFF1C1F26),
-    surfaceInset = Color(0xFF1F2229), hairline = Color(0xFF21304A), hairlineStrong = Color(0xFF2E3C57),
-    textPrimary = Color(0xFFF4F6F8), textSecondary = Color(0xFFC8CFD8), textTertiary = Color(0xFF8A94A4),
+    surfaceBase = Color(0xFF141218), surfaceRaised = Color(0xFF211F26), surfaceOverlay = Color(0xFF211F26),
+    surfaceInset = Color(0xFF262C33), hairline = Color(0xFF49454F), hairlineStrong = Color(0xFF938F99),
+    textPrimary = Color(0xFFE6E0E9), textSecondary = Color(0xFFCAC4D0), textTertiary = Color(0xFFA49FAA),
+    primaryContainer = Color(0xFF4F378B), onPrimaryContainer = Color(0xFFE8DEF8),
+    secondaryContainer = Color(0xFF4A4458), recoveryMid = Color(0xFFC9D86A), strainGoalBand = Color(0x40F0A85A),
     glowAmbient = Color(0xFF3A2D0A),
-    // Brand accent → mint, parity with iOS #1068 (NoopVisualStyle.mint/mintGlow). accentMuted is a dark
-    // teal muted surface (green-shifted analog of the old navy 0xFF16233A). Gold stays in the recovery world.
-    accent = Color(0xFF69DDB8), accentHover = Color(0xFF54E6BD), accentMuted = Color(0xFF163329), focusRing = Color(0xFF69DDB8),
+    accent = Color(0xFFD0BCFF), accentHover = Color(0xFFE1D5FF), accentMuted = Color(0xFF4A4458), focusRing = Color(0xFFD0BCFF),
     recovery000 = Color(0xFFE0463C), recovery030 = Color(0xFFE8743C), recovery055 = Color(0xFFF9DF4A),
     recovery078 = Color(0xFF8FD86A), recovery100 = Color(0xFF03E095),
     strain000 = Color(0xFF9C5A14), strain033 = Color(0xFFC2762A), strain066 = Color(0xFFD98A3D), strain100 = Color(0xFFF0A85A),
-    sleepAwake = Color(0xFFC2CCDA), sleepLight = Color(0xFF4A90E2), sleepDeep = Color(0xFF2F6FCB), sleepREM = Color(0xFF6FA8E8),
+    sleepAwake = Color(0xFFCAC8CB), sleepLight = Color(0xFF7B78E0), sleepDeep = Color(0xFFFD96FD), sleepREM = Color(0xFFAE5BEF),
     zone1 = Color(0xFF4A90E2), zone2 = Color(0xFF3FA9C9), zone3 = Color(0xFFE8B84B), zone4 = Color(0xFFD98A3D), zone5 = Color(0xFFE0662F),
-    statusPositive = Color(0xFF03E095), statusWarning = Color(0xFFF0A020), statusCritical = Color(0xFFE0662F),
-    metricCyan = Color(0xFF3FA9C9), metricPurple = Color(0xFF4A90E2), metricAmber = Color(0xFFD98A3D), metricRose = Color(0xFFE0662F),
-    chargeColor = Color(0xFF03E095), chargeDeep = Color(0xFF0B9D62), chargeBright = Color(0xFF6BF0B4), chargeGlow = Color(0xFF03E095),
-    effortColor = Color(0xFF4090E0), effortDeep = Color(0xFF2A6FB0), effortBright = Color(0xFF74B6F0), effortGlow = Color(0xFF4090E0),
-    restColor = Color(0xFF83A0B8), restDeep = Color(0xFF2F6FCB), restBright = Color(0xFF6FA8E8), restGlow = Color(0xFF4A90E2),
+    statusPositive = Color(0xFF6DD58C), statusWarning = Color(0xFFFFB870), statusCritical = Color(0xFFE0662F),
+    metricCyan = Color(0xFF3FA9C9), metricPurple = Color(0xFF4A90E2), metricAmber = Color(0xFFD98A3D), metricRose = Color(0xFFFF7A7A),
+    chargeColor = Color(0xFF6DD58C), chargeDeep = Color(0xFF349D66), chargeBright = Color(0xFF8AE4A4), chargeGlow = Color(0xFF6DD58C),
+    effortColor = Color(0xFFFFB870), effortDeep = Color(0xFFBE7139), effortBright = Color(0xFFFFD09B), effortGlow = Color(0xFFFFB870),
+    restColor = Color(0xFFA8C7FA), restDeep = Color(0xFF6994DE), restBright = Color(0xFFBCD5FF), restGlow = Color(0xFFA8C7FA),
     stressColor = Color(0xFFF0A020), stressDeep = Color(0xFF4A90E2), stressBright = Color(0xFFE0662F), stressGlow = Color(0xFFF0A020),
-    scenicCenter = Color(0xFF1C2128), scenicEdge = Color(0xFF121518), scenicStar = Color(0xFFC8CFD8),
-    cardFillTop = Color(0xFF15243C), cardFillBottom = Color(0xFF0B1424),
+    scenicCenter = Color(0xFF201C2B), scenicEdge = Color(0xFF15131B), scenicStar = Color(0xFFC8CFD8),
+    cardFillTop = Color(0xFF26232E), cardFillBottom = Color(0xFF202027),
     gold = Color(0xFF60A0E0), goldLight = Color(0xFF9FC8F0), goldDeep = Color(0xFF3A78C8),
     goldDeepText = Color(0xFFFFFFFF), signalYellow = Color(0xFFFFD63D),
     titaniumTop = Color(0xFFF1F3F5), titaniumMid = Color(0xFFC9CFD4), titaniumLow = Color(0xFF969DA4), titaniumDeep = Color(0xFF6B737B),
     tipCore = Color(0xFFFFFFFF),
-    heroFill = Color(0xCC0D0E14), heroBorder = Color(0x1CFFFFFF),
+    heroFill = Color(0xFF202027), heroBorder = Color(0xFF383540),
 )
 
 val LightTokens = PaletteTokens(
-    surfaceBase = Color(0xFFEAE3D4), surfaceRaised = Color(0xFFFFFFFF), surfaceOverlay = Color(0xFFFFFFFF),
-    surfaceInset = Color(0xFFDFD8C8), hairline = Color(0xFFD8D0BD), hairlineStrong = Color(0xFFC7BCA4),
-    textPrimary = Color(0xFF1A2230), textSecondary = Color(0xFF4C5564), textTertiary = Color(0xFF7C8696),
+    surfaceBase = Color(0xFFF6F1FA), surfaceRaised = Color(0xFFFFFFFF), surfaceOverlay = Color(0xFFFFFFFF),
+    surfaceInset = Color(0xFFE9E0F1), hairline = Color(0xFFDED4E7), hairlineStrong = Color(0xFFB8A9C7),
+    textPrimary = Color(0xFF21192B), textSecondary = Color(0xFF51475D), textTertiary = Color(0xFF665B72),
     glowAmbient = Color(0xFFF0E4C0),
     // Light chrome accent → brand mint, parity with iOS #1068 (NoopVisualStyle.mint/mintGlow, light side).
     // accentMuted is a pale mint tint (green-shifted analog of the old pale blue 0xFFE4ECF6); note Android's
     // light theme is a WARM paper theme, so this shade may want an on-device tweak. Gold stays in recovery.
-    accent = Color(0xFF149A78), accentHover = Color(0xFF38C99E), accentMuted = Color(0xFFDCEDE6), focusRing = Color(0xFF149A78),
-    recovery000 = Color(0xFF8F6212), recovery030 = Color(0xFFA87718), recovery055 = Color(0xFFC28E26),
-    recovery078 = Color(0xFFD2A23A), recovery100 = Color(0xFFE0B44C),
+    accent = Color(0xFF624399), accentHover = Color(0xFF7959AE), accentMuted = Color(0xFFE9DDF8), focusRing = Color(0xFF624399),
+    recovery000 = Color(0xFF30603F), recovery030 = Color(0xFFA87718), recovery055 = Color(0xFFC28E26),
+    recovery078 = Color(0xFFD2A23A), recovery100 = Color(0xFF5DA77D),
     strain000 = Color(0xFF7E460E), strain033 = Color(0xFFA4621B), strain066 = Color(0xFFC2792E), strain100 = Color(0xFFD89240),
     sleepAwake = Color(0xFF97A2B2), sleepLight = Color(0xFF3A80D6), sleepDeep = Color(0xFF234F9E), sleepREM = Color(0xFF5790DA),
     zone1 = Color(0xFF3A80D6), zone2 = Color(0xFF2E92B4), zone3 = Color(0xFFC28E26), zone4 = Color(0xFFC2792E), zone5 = Color(0xFFC84E1E),
     statusPositive = Color(0xFFB07D17), statusWarning = Color(0xFFC2792E), statusCritical = Color(0xFFC84E1E),
     metricCyan = Color(0xFF2E92B4), metricPurple = Color(0xFF3A80D6), metricAmber = Color(0xFFC2792E), metricRose = Color(0xFFC84E1E),
-    chargeColor = Color(0xFFB88421), chargeDeep = Color(0xFF8F6212), chargeBright = Color(0xFFE0B44C), chargeGlow = Color(0xFFC8902F),
+    chargeColor = Color(0xFF247647), chargeDeep = Color(0xFF30603F), chargeBright = Color(0xFF5DA77D), chargeGlow = Color(0xFF409762),
     effortColor = Color(0xFFB26A1C), effortDeep = Color(0xFF7E460E), effortBright = Color(0xFFD89240), effortGlow = Color(0xFFB26A1C),
     restColor = Color(0xFF3A80D6), restDeep = Color(0xFF234F9E), restBright = Color(0xFF5790DA), restGlow = Color(0xFF3A80D6),
-    stressColor = Color(0xFFB88421), stressDeep = Color(0xFF3A80D6), stressBright = Color(0xFFC84E1E), stressGlow = Color(0xFFB88421),
-    scenicCenter = Color(0xFFFBF6EA), scenicEdge = Color(0xFFEDE6D6), scenicStar = Color(0xFFD8CDB6),
-    cardFillTop = Color(0xFFFFFFFF), cardFillBottom = Color(0xFFFAF7F0),
+    stressColor = Color(0xFF247647), stressDeep = Color(0xFF3A80D6), stressBright = Color(0xFFC84E1E), stressGlow = Color(0xFF247647),
+    scenicCenter = Color(0xFFFFFBFE), scenicEdge = Color(0xFFF6F1FA), scenicStar = Color(0xFFD8CDB6),
+    cardFillTop = Color(0xFFFFFFFF), cardFillBottom = Color(0xFFFDF9FE),
     gold = Color(0xFFDBA52A), goldLight = Color(0xFFECC766), goldDeep = Color(0xFF9A6B12),
     goldDeepText = Color(0xFF3A2708), signalYellow = Color(0xFFE8A800),
     titaniumTop = Color(0xFFDDE1E6), titaniumMid = Color(0xFFBBC2C9), titaniumLow = Color(0xFF98A0A8), titaniumDeep = Color(0xFF6B737B),
@@ -296,7 +299,7 @@ object AppearancePrefs {
         ctx.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     /** Live appearance mode read by NoopTheme; defaults to System until [load] runs. */
-    var mode by mutableStateOf(AppearanceMode.SYSTEM)
+    var mode by mutableStateOf(AppearanceMode.DARK)
         private set
 
     /**
@@ -309,7 +312,7 @@ object AppearancePrefs {
         private set
 
     fun load(ctx: Context) {
-        mode = AppearanceMode.fromStorage(prefs(ctx).getString(KEY, AppearanceMode.SYSTEM.storageValue))
+        mode = AppearanceMode.fromStorage(prefs(ctx).getString(KEY, AppearanceMode.DARK.storageValue))
         gaugeNumerals = GaugeNumeralStyle.fromStorage(
             prefs(ctx).getString(GAUGE_KEY, GaugeNumeralStyle.BOLD.storageValue))
     }
@@ -328,7 +331,7 @@ object AppearancePrefs {
 /** The user's CHROME accent colour (buttons/links/selection/focus). Chrome only — the recovery/strain/
  *  sleep DATA colour worlds are never themed by this. Twin of macOS `AccentColor` (StrandDesign). */
 enum class AccentColor(val storageValue: String, val label: String) {
-    MINT("mint", "Mint"),
+    MINT("mint", "Default"),
     WHOOP_BLUE("whoopBlue", "WHOOP Blue"),
     CUSTOM("custom", "Custom");
 
