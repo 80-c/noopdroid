@@ -3040,4 +3040,6 @@
     <string name="design_zone_threshold">Zone 4 · Threshold</string>
     <string name="design_zone_max">Zone 5 · Maximum</string>
     <string name="design_days_period">%1$d days</string>
+    <string name="design_empty_transfer">No new history received</string>
+    <string name="design_sync_failed">Sync failed</string>
 </resources>

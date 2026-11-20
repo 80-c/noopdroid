@@ -252,6 +252,7 @@ data class LiveState(
      *  this process. For a cloud-free app this is the honest "is sync actually working?" answer — the
      *  UI renders it as a relative "Last synced N ago". (PR #85) */
     val lastSyncAt: Long? = null,
+    val lastHistoryTransferEmpty: Boolean = false,
     /** Set when an offload ended abnormally (strap went quiet mid-sync / idle-watchdog fired), so a
      *  stalled history download isn't silent. Cleared on the next successful HISTORY_COMPLETE. (PR #85) */
     val lastSyncError: String? = null,
@@ -1448,6 +1449,7 @@ class WhoopBleClient(
                 // #612: the display flag only, not the underlying emptySyncTracker streak (that counter
                 // deliberately survives a reconnect, unchanged existing behaviour).
                 sustainedEmptyOffload = false,
+                lastHistoryTransferEmpty = false,
             )
 
         /**
@@ -8326,7 +8328,7 @@ class WhoopBleClient(
                     // exposure there is a diagnostic asserting something the strap never said: a real
                     // violation of "a diagnostic may only assert what it can attribute", but a reading,
                     // not a data path. Hardening them is a scope decision, not this change's.
-                    if (frame.size > cmdOff && (frame[cmdOff].toInt() and 0xFF) == CommandNumber.GET_DATA_RANGE.rawValue) {
+                    if (com.noop.protocol.DataRange.matchesReply(frame, cmdOff, CommandNumber.GET_DATA_RANGE.rawValue)) {
                         // #451: dump raw GET_DATA_RANGE response bytes unconditionally (even if decode returns
                         // null) so a stale/wrong-epoch "newest" can be told apart from a frame-alignment bug in
                         // dataRangeNewestUnix straight from a normal strap-log export. Mirrors the Swift line.
@@ -8375,7 +8377,7 @@ class WhoopBleClient(
                         val acceptsWindow = com.noop.protocol.DataRange.acceptsReply(
                             frame, cmdOff, CommandNumber.GET_DATA_RANGE.rawValue,
                         ) { parsed.ok }
-                        if (!acceptsWindow) {
+                        if (!parsed.ok) {
                             log(
                                 "Get Data Range reply REJECTED by the frame-integrity check " +
                                     "(reason=${parsed.rejectReason.wireName}) — the strap's banked-record " +
@@ -11339,6 +11341,7 @@ class WhoopBleClient(
                 backfilling = false,
                 syncChunksThisSession = ackedChunksThisSession,
                 lastSyncAt = nowSec,
+                lastHistoryTransferEmpty = bankedNothing,
                 // bankedNothing keeps its own sustained-empty precedence (#126/#214) — future-dated is
                 // checked ONLY on the banked-something path, matching the Swift else-if order exactly so
                 // the two platforms never disagree on which banner a given sync shows.
@@ -11367,6 +11370,7 @@ class WhoopBleClient(
                 sustainedEmptyOffload = sustainedEmpty,
             )
             "timeout" -> it.copy(
+                lastHistoryTransferEmpty = false,
                 backfilling = false,
                 syncChunksThisSession = ackedChunksThisSession,
                 // #580: on a history-experimental 5/MG this isn't a sync failure — suppress the "went quiet"

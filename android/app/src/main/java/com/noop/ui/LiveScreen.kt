@@ -55,7 +55,10 @@ internal fun LiveScreen(vm: AppViewModel, you: () -> Unit, navigate: (String)->U
     var picker by rememberSaveable {mutableStateOf(false)}
     var recording by rememberSaveable {mutableStateOf(false)}
     var detail by remember {mutableStateOf<WorkoutRow?>(null)}
-    DisposableEffect(vm){vm.requestRealtimeHr(); onDispose {vm.releaseRealtimeHr()}}
+    androidx.lifecycle.compose.LifecycleStartEffect(vm) {
+        vm.requestRealtimeHr()
+        onStopOrDispose { vm.releaseRealtimeHr() }
+    }
     LaunchedEffect(strap,finished?.endTs){vm.loadWorkouts()}
     LaunchedEffect(vm){if(vm.consumeActiveWorkoutRequest())recording=true}
     val saved by produceState<com.noop.data.HrSample?>(null, strap, live.lastSyncAt) {

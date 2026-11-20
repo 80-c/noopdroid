@@ -34,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -152,9 +151,9 @@ fun DeviceConsole(
 
     // Keep the realtime HR stream on while this screen is visible (ref-counted in the ViewModel, so
     // navigating to Health Monitor — which also wants it — doesn't stop it). Refresh battery on bond.
-    DisposableEffect(Unit) {
+    androidx.lifecycle.compose.LifecycleStartEffect(viewModel) {
         viewModel.requestRealtimeHr()
-        onDispose { viewModel.releaseRealtimeHr() }
+        onStopOrDispose { viewModel.releaseRealtimeHr() }
     }
     LaunchedEffect(live.bonded) {
         if (live.bonded) viewModel.getBattery()

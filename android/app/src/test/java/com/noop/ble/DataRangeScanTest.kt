@@ -17,6 +17,18 @@ import org.junit.Test
  */
 class DataRangeScanTest {
 
+    @Test
+    fun `live HR off event cannot supply history dates`() {
+        val event = hex("aa100057309c2200d6a3000000680000e56cac07")
+        assertFalse(DataRange.acceptsReply(event, 6, 34) { true })
+    }
+
+    @Test
+    fun `pending range acknowledgement cannot supply history dates`() {
+        val pending = hex("aa010c000100271124e8220402000000c391bc3d")
+        assertFalse(DataRange.acceptsReply(pending, 10, 34) { true })
+    }
+
     private fun hex(s: String) = ByteArray(s.length / 2) {
         ((Character.digit(s[it * 2], 16) shl 4) + Character.digit(s[it * 2 + 1], 16)).toByte()
     }

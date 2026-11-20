@@ -98,7 +98,7 @@ internal fun TodayScreen(vm: AppViewModel, you: () -> Unit, recovery: () -> Unit
             }
             Column(horizontalAlignment=Alignment.End) {
                 DText(stringResource(R.string.design_device_stats,device.name,number(device.battery)),13,c.textSecondary)
-                DText(syncLabel(live.lastSyncAt),13,c.textSecondary)
+                DText(syncLabel(live),13,c.textSecondary)
             }
         }
     }

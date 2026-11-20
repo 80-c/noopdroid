@@ -2906,4 +2906,6 @@
     <string name="design_zone_threshold">Зона 4 · Порог</string>
     <string name="design_zone_max">Зона 5 · Максимум</string>
     <string name="design_days_period">%1$d дн.</string>
+    <string name="design_empty_transfer">Новых данных истории нет</string>
+    <string name="design_sync_failed">Ошибка синхронизации</string>
 </resources>

@@ -35,7 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -136,9 +135,9 @@ fun HealthScreen(
     // Health Monitor shows live HR too, so it must keep the realtime stream on while it's visible —
     // otherwise leaving the Live page stopped the stream and this page froze (issue #18). Ref-counted
     // in the ViewModel, so handing off between Live and here never drops the stream.
-    DisposableEffect(Unit) {
+    androidx.lifecycle.compose.LifecycleStartEffect(vm) {
         vm.requestRealtimeHr()
-        onDispose { vm.releaseRealtimeHr() }
+        onStopOrDispose { vm.releaseRealtimeHr() }
     }
 
     // PERF (#scroll-jank): the BLE live state + smoothed bpm tick ~1Hz. Reading them in this body to

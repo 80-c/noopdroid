@@ -3024,4 +3024,6 @@
     <string name="design_zone_threshold">Zone 4 · Schwelle</string>
     <string name="design_zone_max">Zone 5 · Maximalbelastung</string>
     <string name="design_days_period">%1$d Tage</string>
+    <string name="design_empty_transfer">Keine neuen Verlaufsdaten empfangen</string>
+    <string name="design_sync_failed">Synchronisierung fehlgeschlagen</string>
 </resources>

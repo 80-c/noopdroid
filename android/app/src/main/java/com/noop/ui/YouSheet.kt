@@ -44,8 +44,13 @@ internal data class DesignDevice(val name:String,val connected:Boolean,val batte
     return DesignDevice(name ?: missing,connected,if(band)live.batteryPct else if(connected)ringBattery?.toDouble() else null,band && !live.backfilling)
 }
 
-@Composable internal fun syncLabel(ts:Long?)=stringResource(R.string.design_synced,
-    ts?.let { ((System.currentTimeMillis()/1000-it).coerceAtLeast(0)/60).toString() } ?: missing)
+@Composable internal fun syncLabel(live: com.noop.ble.LiveState): String = when {
+    live.backfilling -> stringResource(R.string.tools_syncing)
+    live.lastHistoryTransferEmpty -> stringResource(R.string.design_empty_transfer)
+    live.lastSyncError != null -> stringResource(R.string.design_sync_failed)
+    live.lastSyncAt == null -> missing
+    else -> stringResource(R.string.design_synced, ((System.currentTimeMillis() / 1000 - live.lastSyncAt).coerceAtLeast(0) / 60).toString())
+}
 
 private data class YouItem(val label:Int,val icon:Int,val route:String,val value:String?=null)
 
@@ -106,7 +111,7 @@ private data class YouItem(val label:Int,val icon:Int,val route:String,val value
                         Column {
                             DText(device.name,18,medium=true)
                             DText(listOf(stringResource(if(device.connected)R.string.design_link else R.string.design_offline),
-                                stringResource(R.string.design_battery,number(device.battery)),syncLabel(live.lastSyncAt)).joinToString(" · "),15,c.textSecondary)
+                                stringResource(R.string.design_battery,number(device.battery)),syncLabel(live)).joinToString(" · "),15,c.textSecondary)
                         }
                     }
                     Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {

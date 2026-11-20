@@ -112,11 +112,15 @@ object DataRange {
      * that is not this reply costs one byte compare and no parse. The opcode is passed in rather than
      * restated here: the command table lives with the caller. Mirrors Swift `DataRange.acceptsReply`.
      */
-    fun acceptsReply(frame: ByteArray, cmdOff: Int, opcode: Int, verdictOk: () -> Boolean): Boolean {
-        if (cmdOff < 0 || cmdOff >= frame.size) return false
-        if ((frame[cmdOff].toInt() and 0xFF) != opcode) return false
-        return verdictOk()
+    fun matchesReply(frame: ByteArray, cmdOff: Int, opcode: Int): Boolean {
+        if (cmdOff !in 2 until frame.size || (frame[cmdOff].toInt() and 0xff) != opcode) return false
+        // Event 34 (realtime HR off) shares its number with GET_DATA_RANGE.
+        val type = frame[cmdOff - 2].toInt() and 0xff
+        return type == PacketType.COMMAND_RESPONSE.rawValue || type == PacketType.PUFFIN_COMMAND_RESPONSE.rawValue
     }
+
+    fun acceptsReply(frame: ByteArray, cmdOff: Int, opcode: Int, verdictOk: () -> Boolean): Boolean =
+        matchesReply(frame, cmdOff, opcode) && verdictOk() && !isPendingResponse(frame, cmdOff)
 
     /**
      * True when a GET_DATA_RANGE COMMAND_RESPONSE is the `PENDING(2)` acknowledgement rather than the
